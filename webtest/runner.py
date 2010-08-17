@@ -338,7 +338,7 @@ class WebtestRunner:
         # Empty the list of test set requests
         cls.test_set_requests = {}
 
-        # Add each webtest in the after_set
+        # Add each webtest in the before_set
         for filename in before_set:
             cls.add_webtest_file(filename)
         # Add each webtest set to the class
