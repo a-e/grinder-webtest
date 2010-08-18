@@ -218,7 +218,7 @@ class TestSet:
 
         """
         self.filenames = list(webtest_filenames)
-        self.weight = self.kwargs.get('weight', 1.0)
+        self.weight = kwargs.get('weight', 1.0)
 
 
 class WebtestRunner:
@@ -340,8 +340,9 @@ class WebtestRunner:
         if not isinstance(test_sets, list):
             raise ValueError("test_sets must be a list of TestSets.")
         # Ensure that each item in the list is a TestSet
-        if not all(isinstance(test_set) for test_set in test_sets):
-            raise ValueError("test_sets must be a list of TestSets.")
+        for test_set in test_sets:
+            if not isinstance(test_set, TestSet):
+                raise ValueError("test_sets must be a list of TestSets.")
         # Ensure that sequence matches allowed values
         if sequence not in ('sequential', 'random', 'weighted', 'thread'):
             raise ValueError("sequence must be 'sequential', 'random', or 'thread'.")
@@ -374,7 +375,7 @@ class WebtestRunner:
         # For weighted sequencing, normalize the weights in all test sets,
         # so that they sum to 1.0 (100%)
         if cls.sequence == 'weighted':
-            total = sum(test_set.weight for test_set in cls.test_sets)
+            total = sum([test_set.weight for test_set in cls.test_sets])
             for test_set in cls.test_sets:
                 test_set.weight = float(test_set.weight) / total
 
