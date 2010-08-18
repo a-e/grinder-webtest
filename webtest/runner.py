@@ -203,6 +203,14 @@ def macro(macro_name, args):
         raise NameError("Unknown macro: %s" % macro_name)
 
 
+class TestSet:
+    def __init__(self, *webtest_filenames, **kwargs):
+        """Create a test set for executing the given ``.webtest`` files.
+        """
+        self.filenames = list(webtest_filenames)
+        self.weight = self.kwargs.get('weight', 1.0)
+
+
 class WebtestRunner:
     """A base class for `TestRunner` instances that will run ``.webtest`` files.
 
@@ -219,7 +227,7 @@ class WebtestRunner:
     debug = False
 
     # List of lists of .webtest filenames
-    webtest_sets = []
+    test_sets = []
     # Lists of .webtest files to run before and after each test set
     before_set = []
     after_set = []
@@ -258,44 +266,48 @@ class WebtestRunner:
         cls.webtest_requests[filename] = test_requests
         # Skip ahead to the next test_number
         cls.test_number += cls.test_number_skip
+
     # Make this a class method
     add_webtest_file = classmethod(add_webtest_file)
 
 
-    def set_class_attributes(cls, before_set, webtest_sets, after_set,
+    def set_class_attributes(cls, before_set, test_sets, after_set,
                              sequence='sequential',
                              think_time=500,
                              verbosity='quiet'):
         """Set attributes that affect all `WebtestRunner` instances.
 
         before_set
-            A list of webtests that should be run before each test set.
-            Use this if all webtests need to perform the same initial
-            steps, such as logging in.
+            A `TestSet` that should be run when the `TestRunner` is
+            initialized. Use this if all webtests need to perform the same
+            initial steps, such as logging in.
 
-        webtest_sets
-            A list of lists, where each inner list contains one or more
-            webtests that must be run sequentially. Each inner list of
-            webtests will run in a single TestRunner instance, ensuring
+        test_sets
+            A list of TestSets, where each `TestSet` contains one or more
+            webtests that must be run sequentially. Each `TestSet`
+            will run in a single TestRunner instance, ensuring
             that they can share variable values.
 
         after_set
-            A list of webtests that should be run after each test set.
-            Use this if all webtests need to perform the same final
-            steps, such as logging out.
+            A `TestSet` that should be run when the `TestRunner` is destroyed.
+            Use this if all webtests need to perform the same final steps, such
+            as logging out.
 
         sequence
             How to run the given test sets. Allowed values:
 
             'sequential'
-                Each thread runs all test sets in order.
+                Each thread runs all TestSets in order.
             'random'
-                Each thread runs a random test set for each ``__call__``.
+                Each thread runs a random TestSet for each ``__call__``.
+            'weighted'
+                Each thread runs a random TestSet, with those having a
+                larger ``weight`` being run more often.
             'thread'
-                Thread 0 runs the first test set, Thread 1 runs the next, and
-                so on. If there are fewer threads than test sets, some test
-                sets will not be run.  If there are more threads than test
-                sets, the extra threads start over at 0 again.
+                Thread 0 runs the first TestSet, Thread 1 runs the next, and so
+                on. If there are fewer threads than TestSets, some TestSets
+                will not be run. If there are more threads than TestSets, the
+                extra threads start over at 0 again.
 
         think_time
             Time in milliseconds to sleep between each request.
@@ -314,15 +326,14 @@ class WebtestRunner:
                 Only log errors, nothing else
 
         """
-        # Ensure that webtest_sets is a list
-        if not isinstance(webtest_sets, list):
-            raise ValueError("webtest_sets must be a list of lists.")
-        # Ensure that each item in the list is also a list
-        for webtest_set in webtest_sets:
-            if not isinstance(webtest_set, list):
-                raise ValueError("webtest_sets must be a list of lists.")
+        # Ensure that test_sets is a list
+        if not isinstance(test_sets, list):
+            raise ValueError("test_sets must be a list of TestSets.")
+        # Ensure that each item in the list is a TestSet
+        if not all(isinstance(test_set) for test_set in test_sets):
+            raise ValueError("test_sets must be a list of TestSets.")
         # Ensure that sequence matches allowed values
-        if sequence not in ('sequential', 'random', 'thread'):
+        if sequence not in ('sequential', 'random', 'weighted', 'thread'):
             raise ValueError("sequence must be 'sequential', 'random', or 'thread'.")
         # Ensure that verbosity is valid
         if verbosity not in ('debug', 'info', 'quiet', 'error'):
@@ -330,7 +341,7 @@ class WebtestRunner:
 
         # Set the webtest filename and think time at the class level
         cls.before_set = before_set
-        cls.webtest_sets = webtest_sets
+        cls.test_sets = test_sets
         cls.after_set = after_set
         cls.sequence = sequence
         cls.think_time = think_time
@@ -339,16 +350,24 @@ class WebtestRunner:
         cls.test_set_requests = {}
 
         # Add each webtest in the before_set
-        for filename in before_set:
+        for filename in cls.before_set.filenames:
             cls.add_webtest_file(filename)
         # Add each webtest set to the class
-        for webtest_set in webtest_sets:
+        for test_set in cls.test_sets:
             # Add all filenames in this set to the class
-            for filename in webtest_set:
+            for filename in test_set.filenames:
                 cls.add_webtest_file(filename)
         # Add each webtest in the after_set
-        for filename in after_set:
+        for filename in cls.after_set.filenames:
             cls.add_webtest_file(filename)
+
+        # For weighted sequencing, normalize the weights in all test sets,
+        # so that they sum to 1.0 (100%)
+        if cls.sequence == 'weighted':
+            total = sum(test_set.weight for test_set in cls.test_sets)
+            for test_set in cls.test_sets:
+                test_set.weight = float(test_set.weight) / total
+
     # Make this a class method
     set_class_attributes = classmethod(set_class_attributes)
 
@@ -363,14 +382,14 @@ class WebtestRunner:
         self.variables = variables
 
         # Run tests in the before_set
-        self.run_webtest_set(WebtestRunner.before_set)
+        self.run_test_set(WebtestRunner.before_set)
 
 
     def __del__(self):
         """Destructor--run tests in the after_set.
         """
         # Run tests in the after_set
-        self.run_webtest_set(WebtestRunner.after_set)
+        self.run_test_set(WebtestRunner.after_set)
 
 
     def eval_expressions(self, value):
@@ -640,10 +659,10 @@ class WebtestRunner:
         return response
 
 
-    def run_webtest_set(self, webtest_set):
-        """Run all ``.webtest`` files in the given ``webtest_set``.
+    def run_test_set(self, test_set):
+        """Run all ``.webtest`` files in the given `TestSet`.
         """
-        for filename in webtest_set:
+        for filename in test_set.filenames:
             if WebtestRunner.verbosity != 'error':
                 log("==== Executing: %s ==========" % filename)
 
@@ -674,28 +693,44 @@ class WebtestRunner:
 
         # Determine which sequencing to use
         sequence = WebtestRunner.sequence
-        # Run a single webtest_set at random.
+        # Run a single TestSet at random.
         if sequence == 'random':
-            webtest_set = random.choice(WebtestRunner.webtest_sets)
-            self.run_webtest_set(webtest_set)
+            test_set = random.choice(WebtestRunner.test_sets)
+            self.run_test_set(test_set)
 
-        # Run a single webtest_set based on the current thread number.
+        # Run a single TestSet based on the current thread number
         elif sequence == 'thread':
-            index = grinder.getThreadNumber() % len(WebtestRunner.webtest_sets)
-            webtest_set = WebtestRunner.webtest_sets[index]
-            self.run_webtest_set(webtest_set)
+            index = grinder.getThreadNumber() % len(WebtestRunner.test_sets)
+            test_set = WebtestRunner.test_sets[index]
+            self.run_test_set(test_set)
 
-        # Run all webtest_sets sequentially.
+        # Run a TestSet based on a percentage-based weight
+        elif sequence == 'weighted':
+            # Get a random number between 0.0 and 1.0
+            pick = random.random()
+            # Figure out which TestSet to run, by determining an interval
+            # for each one; whichever interval pick falls into is the test
+            # that will be run (assumes all TestSet weights are normalized)
+            left, right = 0.0, 0.0
+            for test_set in WebtestRunner.test_sets:
+                left = right
+                right = left + test_set.weight
+                if left <= pick and pick <= right:
+                    break
+            # Run the TestSet that was selected
+            self.run_test_set(test_set)
+
+        # Run all TestSets sequentially
         else: # assume 'sequential'
-            for webtest_set in WebtestRunner.webtest_sets:
-                self.run_webtest_set(webtest_set)
+            for test_set in WebtestRunner.test_sets:
+                self.run_test_set(test_set)
 
 
-def get_test_runner(before_set, webtest_sets, after_set,
+def get_test_runner(before_set, test_sets, after_set,
                     sequence='sequential', think_time=500, variables={},
                     verbosity='quiet'):
     """Return a `TestRunner` base class that runs ``.webtest`` files in the
-    given ``webtest_sets``.
+    given ``test_sets``.
 
         variables
             Default variables for all `TestRunner` instances. Each
@@ -706,7 +741,7 @@ def get_test_runner(before_set, webtest_sets, after_set,
     See `WebtestRunner.set_class_attributes` for documentation on the other
     parameters.
     """
-    WebtestRunner.set_class_attributes(before_set, webtest_sets, after_set,
+    WebtestRunner.set_class_attributes(before_set, test_sets, after_set,
         sequence, think_time, verbosity)
 
     # Define the actual TestRunner wrapper class. This allows us to delay

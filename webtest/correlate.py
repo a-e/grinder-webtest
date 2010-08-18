@@ -53,11 +53,11 @@ class CorrelationRunner (WebtestRunner):
         self.webtest_responses = {}
 
 
-    def run_webtest_set(self, webtest_set):
+    def run_test_set(self, test_set):
         """Overridden from WebtestRunner base class, to record the
         response for each request.
         """
-        for filename in webtest_set:
+        for filename in test_set.filenames:
             log("========== Executing: %s ==========" % filename)
             # Add an empty list to the responses dict, if it doesn't exist
             if filename not in self.webtest_responses:
@@ -134,13 +134,13 @@ class CorrelationRunner (WebtestRunner):
 
 
 
-def get_correlation_runner(before_set, webtest_sets, after_set,
+def get_correlation_runner(before_set, test_sets, after_set,
                            sequence='sequential', think_time=500, variables={}):
     """Return a TestRunner base class that runs .webtest files in the given
-    webtest_sets, and does correlation of request parameters with responses.
+    test_sets, and does correlation of request parameters with responses.
     """
     WebtestRunner.set_class_attributes(
-        before_set, webtest_sets, after_set, sequence, think_time, 'debug')
+        before_set, test_sets, after_set, sequence, think_time, 'debug')
 
     # Define the actual TestRunner wrapper class. This allows us to delay
     # instantiation of the class until the Grinder threads run, while still
