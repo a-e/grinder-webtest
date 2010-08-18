@@ -206,6 +206,16 @@ def macro(macro_name, args):
 class TestSet:
     def __init__(self, *webtest_filenames, **kwargs):
         """Create a test set for executing the given ``.webtest`` files.
+
+            webtest_filenames
+                One or more ``.webtest`` XML filenames of tests to run together
+                in this set
+
+        Optional keyword arguments:
+
+            weight
+                A numeric indicator of how often to run this TestSet
+
         """
         self.filenames = list(webtest_filenames)
         self.weight = self.kwargs.get('weight', 1.0)
@@ -226,11 +236,11 @@ class WebtestRunner:
     # Print debugging output
     debug = False
 
-    # List of lists of .webtest filenames
+    # List of TestSets, each containing .webtest filenames
     test_sets = []
-    # Lists of .webtest files to run before and after each test set
-    before_set = []
-    after_set = []
+    # TestSets to run before and after each test set
+    before_set = TestSet()
+    after_set = TestSet()
     # Sequencing (sequential, random, or thread)
     sequence = 'sequential'
     # Dict of lists of requests, indexed by .webtest filename
