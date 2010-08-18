@@ -27,9 +27,11 @@ webtest_think = grinder.properties.getInt('grinder.think', 500)
 # same TestSet; this allows variables captured in one of them to be carried
 # over to the next webtest. If a webtest can be run independently of all
 # others, then include it in a TestSet by itself.
-before_set = []
-after_set = []
-test_sets = []
+before_set = TestSet()
+after_set = TestSet()
+test_sets = [
+    TestSet(),
+]
 
 
 # Default values for variables
