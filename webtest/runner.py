@@ -53,8 +53,7 @@ might create your TestRunner like this::
 
 Here again, the two invoice tests will be run in order, in the same
 `WebtestRunner` instance, and the two billing tests will also be run in order,
-in the same `WebtestRunner` instance (possibly the same instance, but there is
-no guarantee of this, especially with multiple processes or threads).
+in the same `WebtestRunner` instance.
 
 This covers the essentials of using this module; the next sections deal with
 how to initialize and capture variable values, and how to control the execution
@@ -89,11 +88,14 @@ passing a dictionary using the ``variables`` keyword::
     }
     TestRunner = get_test_runner(my_tests, variables=my_vars)
 
+Variables do not have a particular type; all variables are treated as strings,
+and must be defined as such in the ``variables`` dictionary.
+
 This is just one way to set variable values, and would normally be used to
 initialize "global" variables that are used throughout all of your ``.webtest``
 files. You may also initialize "local" variables in a single ``.webtest`` file
-by simply assigning the ``ALL_CAPS`` variable name a value when it is first
-referenced::
+by simply assigning the ``ALL_CAPS`` variable name a literal value when it is
+first referenced::
 
     <FormPostParameter Name="INVOICE_ID" Value="{INVOICE_ID = 12345}" />
 
@@ -360,8 +362,8 @@ class WebtestRunner:
     # List of TestSets, each containing .webtest filenames
     test_sets = []
     # TestSets to run before and after each test set
-    before_set = TestSet()
-    after_set = TestSet()
+    before_set = None
+    after_set = None
     # Sequencing (sequential, random, or thread)
     sequence = 'sequential'
     # Dict of lists of requests, indexed by .webtest filename
@@ -380,7 +382,7 @@ class WebtestRunner:
     test_number_skip = 1000
 
 
-    def add_webtest_file(cls, filename):
+    def _add_webtest_file(cls, filename):
         """Add all requests in the given ``.webtest`` filename to the class.
         """
         # Parse the Webtest file
@@ -399,7 +401,7 @@ class WebtestRunner:
         cls.test_number += cls.test_number_skip
 
     # Make this a class method
-    add_webtest_file = classmethod(add_webtest_file)
+    _add_webtest_file = classmethod(_add_webtest_file)
 
 
     def set_class_attributes(cls, test_sets,
@@ -459,6 +461,7 @@ class WebtestRunner:
                 Only log errors, nothing else
 
         """
+        # Type-checking
         # Ensure that test_sets is a list
         if not isinstance(test_sets, list):
             raise ValueError("test_sets must be a list of TestSets.")
@@ -466,34 +469,39 @@ class WebtestRunner:
         for test_set in test_sets:
             if not isinstance(test_set, TestSet):
                 raise ValueError("test_sets must be a list of TestSets.")
+        # If before_set was provided, ensure it is a TestSet
+        if before_set and not isinstance(before_set, TestSet):
+            raise ValueError("before_set must be a TestSet.")
+        # If after_set was provided, ensure it is a TestSet
+        if after_set and not isinstance(after_set, TestSet):
+            raise ValueError("after_set must be a TestSet.")
         # Ensure that sequence matches allowed values
         if sequence not in ('sequential', 'random', 'weighted', 'thread'):
-            raise ValueError("sequence must be 'sequential', 'random', or 'thread'.")
+            raise ValueError("sequence must be 'sequential', 'random', 'weighted', or 'thread'.")
         # Ensure that verbosity is valid
         if verbosity not in ('debug', 'info', 'quiet', 'error'):
             raise ValueError("verbosity must be 'debug', 'info', 'quiet', or 'error'.")
 
-        # Set the webtest filename and think time at the class level
-        cls.before_set = before_set
+        # Initialize all class variables
         cls.test_sets = test_sets
+        cls.before_set = before_set
         cls.after_set = after_set
         cls.sequence = sequence
         cls.think_time = think_time
         cls.verbosity = verbosity
-        # Empty the list of test set requests
-        cls.test_set_requests = {}
 
-        # Add each webtest in the before_set
-        for filename in cls.before_set.filenames:
-            cls.add_webtest_file(filename)
-        # Add each webtest set to the class
+        # Add all webtest filenames in all test sets
         for test_set in cls.test_sets:
-            # Add all filenames in this set to the class
             for filename in test_set.filenames:
-                cls.add_webtest_file(filename)
-        # Add each webtest in the after_set
-        for filename in cls.after_set.filenames:
-            cls.add_webtest_file(filename)
+                cls._add_webtest_file(filename)
+        # If before_set was provided, add its webtest files
+        if cls.before_set:
+            for filename in cls.before_set.filenames:
+                cls._add_webtest_file(filename)
+        # If after_set was provided, add its webtest files
+        if cls.after_set:
+            for filename in cls.after_set.filenames:
+                cls._add_webtest_file(filename)
 
         # For weighted sequencing, normalize the weights in all test sets,
         # so that they sum to 1.0 (100%)
@@ -516,14 +524,16 @@ class WebtestRunner:
         self.variables = variables
 
         # Run tests in the before_set
-        self.run_test_set(WebtestRunner.before_set)
+        if self.before_set:
+            self.run_test_set(WebtestRunner.before_set)
 
 
     def __del__(self):
         """Destructor--run tests in the after_set.
         """
         # Run tests in the after_set
-        self.run_test_set(WebtestRunner.after_set)
+        if self.after_set:
+            self.run_test_set(WebtestRunner.after_set)
 
 
     def eval_expressions(self, value):
