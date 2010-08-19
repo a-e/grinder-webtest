@@ -134,13 +134,14 @@ class CorrelationRunner (WebtestRunner):
 
 
 
-def get_correlation_runner(before_set, test_sets, after_set,
+def get_correlation_runner(test_sets,
+                           before_set=None, after_set=None,
                            sequence='sequential', think_time=500, variables={}):
     """Return a TestRunner base class that runs .webtest files in the given
     test_sets, and does correlation of request parameters with responses.
     """
-    WebtestRunner.set_class_attributes(
-        before_set, test_sets, after_set, sequence, think_time, 'debug')
+    WebtestRunner.set_class_attributes(test_sets,
+        before_set, after_set, sequence, think_time, 'debug')
 
     # Define the actual TestRunner wrapper class. This allows us to delay
     # instantiation of the class until the Grinder threads run, while still

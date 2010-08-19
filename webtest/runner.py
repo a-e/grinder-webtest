@@ -1,107 +1,124 @@
 # runner.py
 
-"""Provides a base class for creating Grinder TestRunners that execute
-requests in Visual Studio ``.webtest`` files.
+"""This module provides a high-level function called `get_test_runner`, which
+executes Visual Studio ``.webtest`` files found in one or more `TestSet`\s.
 
-This module provides one high-level function called `get_test_runner`, which
-creates a `TestRunner` class (that's a class, not an instance). At minimum,
-this function takes a nested list of ``.webtest`` files to execute. Call this
-from your main Grinder script like so::
 
-    from webtest.runner import get_test_runner
+TestSets and TestRunners
+------------------------
 
-    my_tests = [['my_test.webtest']]
+In order to execute a ``.webtest`` file, you must wrap it in a `TestSet`, then
+create a `WebtestRunner` class via the `get_test_runner` function. Here is a
+simple example::
+
+    from webtest.runner import TestSet, get_test_runner
+
+    my_tests = [TestSet('my_test.webtest')]
     TestRunner = get_test_runner(my_tests)
 
-It's assumed that you will eventually have more than one ``.webtest`` file to
-execute, which is why the first argument is a list. But why is it a nested
-list? Well, because you may have several ``.webtest`` files that must be run
-sequentially, in a single `TestRunner` instance. For example, if you have two
-different "test sets", each with two ``.webtest`` files, you could create your
-TestRunner like this::
+Each `TestSet` in the list will be executed by a single `WebtestRunner` instance.
+If you have more than one ``.webtest`` file to execute, you can pass all the
+filenames to a single `TestSet`::
 
-    my_test_sets = [
-        ['invoice_1.webtest', 'invoice_2.webtest'],
-        ['billing_1.webtest', 'billing_2.webtest'],
+    my_tests = [TestSet('test1.webtest', 'test2.webtest', 'test3.webtest')]
+    TestRunner = get_test_runner(my_tests)
+
+The above example would run three tests in sequential order, in the same
+`WebtestRunner` instance. This is recommended if there are dependencies between
+the tests (either they must always run in a given sequence, or there are
+captured variables shared between them--more on this shortly).
+
+Another way would be to create a separate `TestSet` instance for each test::
+
+    my_tests = [
+        TestSet('test1.webtest'),
+        TestSet('test2.webtest'),
+        TestSet('test3.webtest'),
     ]
-    TestRunner = get_test_runner(my_test_sets)
+    TestRunner = get_test_runner(my_tests)
 
-The default behavior is for each `TestRunner` instance (each Grinder worker
-thread, that is) to run all of the tests in sequential order. But perhaps
-you want the first thread to run the 'invoice' tests, and the second thread
-to run the 'billing' tests. That's easy, just pass 'thread' as the second
-argument to `get_test_runner`::
+Here, each ``.webtest`` would be run in a separate `WebtestRunner` instance; you
+might take this approach if all three tests are independent, and have no need
+of running in sequence or sharing variables.
 
-    TestRunner = get_test_runner(my_test_sets, 'thread')
+The `TestSet` might also be used for logical grouping of related tests. For
+example, if you have some tests for invoicing, and others for billing, you
+might create your TestRunner like this::
 
-Now, if you run two threads, then each thread will run a different sub-list
-of ``my_test_sets``. If you have more than two threads, then the extra threads
-will be assigned test sets starting over at the beginning:
+    my_tests = [
+        TestSet('invoice_1.webtest', 'invoice_2.webtest'),
+        TestSet('billing_1.webtest', 'billing_2.webtest'),
+    ]
+    TestRunner = get_test_runner(my_tests)
 
-    - Thread 0: invoice
-    - Thread 1: billing
-    - Thread 2: invoice
-    - Thread 3: billing
-    - ...
+Here again, the two invoice tests will be run in order, in the same
+`WebtestRunner` instance, and the two billing tests will also be run in order,
+in the same `WebtestRunner` instance (possibly the same instance, but there is
+no guarantee of this, especially with multiple processes or threads).
 
-A third option is to use random sequencing, so that each thread will choose
-a random test set to run::
+This covers the essentials of using this module; the next sections deal with
+how to initialize and capture variable values, and how to control the execution
+sequence.
 
-    TestRunner = get_test_runner(my_test_sets, 'random')
 
-With this, you might end up with something like:
-
-    - Thread 0: billing
-    - Thread 1: billing
-    - Thread 2: invoice
-    - Thread 3: billing
-    - Thread 4: invoice
-    - ...
+Parameterization and Capturing
+------------------------------
 
 There are two critically important things that are often needed in web
-application testing--parameterization, and capturing of responses. These are
-handled by the inclusion of variables. To use variables, you must first
-determine which parts of your ``.webtest`` file need to be parameterized.
+application testing: parameterization of values, and capturing of responses.
+These are handled by the inclusion of variables. To use variables, you must
+first determine which parts of your ``.webtest`` file need to be parameterized.
 Typically, you will parameterize the ``Value`` attribute of some element, for
 instance::
 
     <FormPostParameter Name="UID" Value="wapcaplet" />
     <FormPostParameter Name="PWD" Value="W0nderPet$" />
 
-To turn this into a parameter, insert an ``ALL_CAPS`` name surrounded by curly
+To turn these into parameters, insert an ``ALL_CAPS`` name surrounded by curly
 braces in place of the ``Value`` attribute's value::
 
     <FormPostParameter Name="UID" Value="{USERNAME}" />
     <FormPostParameter Name="PWD" Value="{PASSWORD}" />
 
 Then, define values for these variables when you call `get_test_runner`, by
-passing a dictionary::
+passing a dictionary using the ``variables`` keyword::
 
     my_vars = {
         'USERNAME': 'wapcaplet',
         'PASSWORD': 'W0nderPet$',
     }
-    TestRunner = get_test_runner(my_test_sets, variables=my_vars)
+    TestRunner = get_test_runner(my_tests, variables=my_vars)
 
-Variable values can also be set directly in the ``.webtest`` file itself. See the
+This is just one way to set variable values, and would normally be used to
+initialize "global" variables that are used throughout all of your ``.webtest``
+files. You may also initialize "local" variables in a single ``.webtest`` file
+by simply assigning the ``ALL_CAPS`` variable name a value when it is first
+referenced::
+
+    <FormPostParameter Name="INVOICE_ID" Value="{INVOICE_ID = 12345}" />
+
+Here, ``INVOICE_ID`` is set to the value ``12345``; any later reference to
+``INVOICE_ID`` in the same ``.webtest`` file (or in other ``.webtest`` files
+that come later in the same `TestSet`) will evaluate to ``12345``. See the
 `WebtestRunner.eval_expressions` method below for details.
 
 Variables can also be set to the result of a "macro"; this is useful if you
 need to refer to the current date (when the script runs), or for generating
 random alphanumeric values::
 
-    <FormPostParameter Name="INVOICE_DATE" Value="{today(%y%m%d}"/>
-    <FormPostParameter Name="INVOICE_ID" Value="{random_digits(10)}"/>
+    <FormPostParameter Name="INVOICE_DATE" Value="{TODAY = today(%y%m%d}"/>
+    <FormPostParameter Name="INVOICE_ID" Value="{INVOICE_ID = random_digits(10)}"/>
 
 See the `macro` method below for details.
 
-If you need to set a variable's value from one of the HTTP responses in your
-``.webtest``, you can use a capture expression. For example, you may need to
-capture a session ID as it comes back from the login request, so that you can
-use it in subsequent requests. To do that, include a ``<Capture>...</Capture>``
-element somewhere in the ``<Request...>`` tag. The ``Capture`` element can
-appear anywhere inside the ``Request`` element, though it makes the most
-chronological sense to put it at the end::
+Finally, and perhaps most importantly, if you need to set a variable's value
+from one of the HTTP responses in your ``.webtest``, you can use a capture
+expression. For example, you may need to capture a session ID as it comes back
+from the login request, so that you can use it in subsequent requests. To do
+that, include a ``<Capture>...</Capture>`` element somewhere in the
+``<Request...>`` tag. The ``Capture`` element can appear anywhere inside the
+``Request`` element, though it makes the most chronological sense to put it at
+the end::
 
     <Request Method="POST" Url="http://my.site/login" ...>
         ...
@@ -113,8 +130,107 @@ chronological sense to put it at the end::
 This will look for ``<sid>...</sid>`` in the response body, and set the
 variable ``SESSION_ID`` equal to its contents. You capture an arbitrary number
 of variable values in this way, then refer to them later in the ``.webtest``
-file (or even in subsequent ``.webtest`` files in the same test set). See the
+file (or in subsequent ``.webtest`` files in the same `TestSet`). See the
 `WebtestRunner.eval_capture` method below for additional details.
+
+
+Sequencing
+----------
+
+The default behavior is for each `WebtestRunner` instance (each Grinder worker
+thread, that is) to run all of the tests in sequential order. Using the same
+example as above::
+
+    my_tests = [
+        TestSet('invoice_1.webtest', 'invoice_2.webtest'),
+        TestSet('billing_1.webtest', 'billing_2.webtest'),
+    ]
+
+Perhaps you want the first thread to run the invoice tests, and the second
+thread to run the billing tests. To do this, pass ``sequence='thread'`` to
+`get_test_runner`::
+
+    TestRunner = get_test_runner(my_tests, sequence='thread')
+
+Now, if you run two threads, then the first thread will run the first
+`TestSet`, and the second thread will run the second `TestSet`. If you have
+more than two threads, then the extra threads will cycle through the list of
+available `TestSet`\s again:
+
+    - Thread 0: invoice
+    - Thread 1: billing
+    - Thread 2: invoice
+    - Thread 3: billing
+    - ...
+
+Another option is to use random sequencing, so that each thread will choose
+a random `TestSet` to run::
+
+    TestRunner = get_test_runner(my_tests, sequence='random')
+
+With this, you might end up with something like:
+
+    - Thread 0: billing
+    - Thread 1: billing
+    - Thread 2: invoice
+    - Thread 3: billing
+    - Thread 4: invoice
+    - ...
+
+Finally, it's possible to assign a "weight" to each `TestSet`; this is similar
+to random sequencing, except that it allows you to control how often each each
+`TestSet` is run in relation to the others. For example, if you would like to
+run the billing tests three times as often as the invoice tests::
+
+    my_tests = [
+        TestSet('invoice_1.webtest', 'invoice_2.webtest', weight=1),
+        TestSet('billing_1.webtest', 'billing_2.webtest', weight=3),
+    ]
+    TestRunner = get_test_runner(my_tests, sequence='weighted')
+
+The ``weight`` of each `TestSet` can be any numeric value; you might use
+integers to obtain a relative frequency, like the example above, or you might
+use floating-point values to define a percentage. Here's the above example
+using percentages::
+
+    my_tests = [
+        TestSet('invoice_1.webtest', 'invoice_2.webtest', weight=0.25),
+        TestSet('billing_1.webtest', 'billing_2.webtest', weight=0.75),
+    ]
+    TestRunner = get_test_runner(my_tests, sequence='weighted')
+
+In other words, the invoice tests will be run 25% of the time, and the billing
+tests 75% of the time. In this case, you might end up with the following:
+
+    - Thread 0: billing
+    - Thread 1: billing
+    - Thread 2: invoice
+    - Thread 3: billing
+    - ...
+
+As with random sequencing, each thread will choose a `TestSet` at random, with
+the likelihood of choosing a particular `TestSet` being determined by the
+weight. This allows you to more closely mimic a real-world distribution of
+activity among your various test scenarios.
+
+
+Before and After
+----------------
+
+If you have test steps that must be run at the beginning of testing (such as
+logging into the application), and/or steps that must be run at the end (such
+as logging out), you can encapsulate those in `TestSet`\s and pass them using
+the ``before_set`` and ``after_set`` keywords. For example::
+
+    login = TestSet('login.webtest')
+    logout = TestSet('logout.webtest')
+    TestRunner = get_test_runner(my_tests, before_set=login, after_set=logout)
+
+The ``before_set`` will be run when a `WebtestRunner` instance is created
+(normally when the Grinder worker thread starts up), and the ``after_set`` will
+be run when the instance is destroyed (the thread finishes execution, or is
+interrupted).
+
 
 """
 
@@ -163,17 +279,17 @@ def macro(macro_name, args):
 
     Supported macros:
 
-        random_digits(num)
-            Generate a random num-digit string
-        random_letters(num)
-            Generate a random num-character string of letters
-        random_alphanumeric(num)
-            Generate a random num-character alphanumeric string
-        today(format)
+        ``random_digits(num)``
+            Generate a random ``num``-digit string
+        ``random_letters(num)``
+            Generate a random ``num``-character string of letters
+        ``random_alphanumeric(num)``
+            Generate a random ``num``-character alphanumeric string
+        ``today(format)``
             Return today's date in the given format. For example,
             ``%m%d%y`` for ``MMDDYY`` format. See the datetime_
             module documentation for allowed format strings.
-        today_plus(days, format)
+        ``today_plus(days, format)``
             Return today plus some number of days, in the given format.
 
     .. _datetime: http://docs.python.org/library/datetime.html
@@ -204,25 +320,30 @@ def macro(macro_name, args):
 
 
 class TestSet:
+    """A collection of ``.webtest`` files that are executed sequentially, with
+    an implied dependency between them.
+
+        ``webtest_filenames``
+            One or more ``.webtest`` XML filenames of tests to run together
+            in this set
+
+    Optional keyword arguments:
+
+        ``weight``
+            A numeric indicator of how often to run this `TestSet`.
+            Use this with the ``sequence='weighted'`` argument to
+            `get_test_runner`.
+
+    """
     def __init__(self, *webtest_filenames, **kwargs):
-        """Create a test set for executing the given ``.webtest`` files.
-
-            webtest_filenames
-                One or more ``.webtest`` XML filenames of tests to run together
-                in this set
-
-        Optional keyword arguments:
-
-            weight
-                A numeric indicator of how often to run this TestSet
-
+        """Create a TestSet.
         """
         self.filenames = list(webtest_filenames)
         self.weight = kwargs.get('weight', 1.0)
 
 
 class WebtestRunner:
-    """A base class for `TestRunner` instances that will run ``.webtest`` files.
+    """A base class for ``TestRunner`` instances that will run `TestSet`\s.
 
     **NOTE**: This class is not meant to be instantiated or overridden
     directly--use the `get_test_runner` function instead.
@@ -281,29 +402,31 @@ class WebtestRunner:
     add_webtest_file = classmethod(add_webtest_file)
 
 
-    def set_class_attributes(cls, before_set, test_sets, after_set,
+    def set_class_attributes(cls, test_sets,
+                             before_set=None,
+                             after_set=None,
                              sequence='sequential',
                              think_time=500,
                              verbosity='quiet'):
         """Set attributes that affect all `WebtestRunner` instances.
 
-        before_set
-            A `TestSet` that should be run when the `TestRunner` is
-            initialized. Use this if all webtests need to perform the same
-            initial steps, such as logging in.
-
-        test_sets
+        ``test_sets``
             A list of TestSets, where each `TestSet` contains one or more
             webtests that must be run sequentially. Each `TestSet`
             will run in a single TestRunner instance, ensuring
             that they can share variable values.
 
-        after_set
+        ``before_set``
+            A `TestSet` that should be run when the `TestRunner` is
+            initialized. Use this if all webtests need to perform the same
+            initial steps, such as logging in.
+
+        ``after_set``
             A `TestSet` that should be run when the `TestRunner` is destroyed.
             Use this if all webtests need to perform the same final steps, such
             as logging out.
 
-        sequence
+        ``sequence``
             How to run the given test sets. Allowed values:
 
             'sequential'
@@ -319,10 +442,10 @@ class WebtestRunner:
                 will not be run. If there are more threads than TestSets, the
                 extra threads start over at 0 again.
 
-        think_time
+        ``think_time``
             Time in milliseconds to sleep between each request.
 
-        verbosity
+        ``verbosity``
             How chatty to be when logging. May be:
 
             'debug'
@@ -510,8 +633,8 @@ class WebtestRunner:
             {VAR_NAME = regexp}
 
         Where ``regexp`` is a regular expression with parentheses around the
-        part you want to capture (or no parentheses to capture the entire
-        match).  For example, if your response contains::
+        part you want to capture (leave out the parentheses to capture the
+        entire match). For example, if your response contains::
 
             ... <a href="http://python.org"> ...
 
@@ -737,13 +860,14 @@ class WebtestRunner:
                 self.run_test_set(test_set)
 
 
-def get_test_runner(before_set, test_sets, after_set,
+def get_test_runner(test_sets,
+                    before_set=None, after_set=None,
                     sequence='sequential', think_time=500, variables={},
                     verbosity='quiet'):
     """Return a `TestRunner` base class that runs ``.webtest`` files in the
     given ``test_sets``.
 
-        variables
+        ``variables``
             Default variables for all `TestRunner` instances. Each
             `TestRunner` instance will get their own copy of these, but
             passing them here lets you define defaults for commonly-used
@@ -752,7 +876,7 @@ def get_test_runner(before_set, test_sets, after_set,
     See `WebtestRunner.set_class_attributes` for documentation on the other
     parameters.
     """
-    WebtestRunner.set_class_attributes(before_set, test_sets, after_set,
+    WebtestRunner.set_class_attributes(test_sets, before_set, after_set,
         sequence, think_time, verbosity)
 
     # Define the actual TestRunner wrapper class. This allows us to delay

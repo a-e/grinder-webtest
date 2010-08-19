@@ -42,8 +42,8 @@ variables = {
 }
 
 # Get the base class for the TestRunner
-TestRunner = get_test_runner(before_set, test_sets, after_set, 'thread', webtest_think, variables, 'info')
+TestRunner = get_test_runner(test_sets, before_set, after_set, 'thread', webtest_think, variables, 'info')
 # Uncomment this to use a correlating TestRunner
-#TestRunner = get_correlation_runner(before_set, test_sets, after_set, 'sequential', webtest_think, variables)
+#TestRunner = get_correlation_runner(test_sets, before_set, after_set, 'sequential', webtest_think, variables)
 
 

@@ -1,6 +1,6 @@
 # parser.py
 
-"""Provides classes for parsing Visual Studio .webtest XML files.
+"""Provides classes for parsing Visual Studio ``.webtest`` XML files.
 
 The Visual Studio ``.webtest`` XML format does not seem to be documented
 anywhere, so all the elements and attributes used here are inferred from the
@@ -18,7 +18,7 @@ This module defines three important classes:
         Parses a ``.webtest`` file and gets a list of `Request` objects
 
 The `Webtest` class is the one you're most likely to use directly. Simply
-provide the name of a .webtest XML file::
+provide the name of a ``.webtest`` XML file::
 
     >>> my_test = Webtest('my_test.webtest')
 
@@ -67,7 +67,7 @@ Two additional elements are understood by this parser:
 
 This module is designed to be used with the `webtest.runner` module, which is
 specifically designed to work with the Grinder load test framework, but the
-parser defined below is not Grinder-specific, and can be used for more
+parser defined here is not Grinder-specific, and can be used for more
 general-purpose parsing of ``.webtest`` files.
 """
 
