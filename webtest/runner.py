@@ -1,11 +1,12 @@
 # runner.py
 
 """This module provides a high-level function called `get_test_runner`, which
-executes Visual Studio ``.webtest`` files found in one or more `TestSet`\s.
+creates a `WebtestRunner` class for executing Visual Studio ``.webtest`` files
+found in one or more `TestSet`\s.
 
 
-TestSets and TestRunners
-------------------------
+Test Sets and Test Runners
+--------------------------
 
 In order to execute a ``.webtest`` file, you must wrap it in a `TestSet`, then
 create a `WebtestRunner` class via the `get_test_runner` function. Here is a

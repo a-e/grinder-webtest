@@ -64,6 +64,10 @@ need to do is include one or more `TestSet`\s containing ``.webtest`` files::
         TestSet('tests/test2.webtest'),
     ]
 
+Then create a `TestRunner` class::
+
+    TestRunner = get_test_runner(test_sets)
+
 For the simplest tests, this is all you need to know. For more detail, refer
 to the `webtest.runner` module documentation.
 
@@ -86,6 +90,11 @@ WebtestRunner
 -------------
 .. autoclass:: webtest.runner.WebtestRunner
     :members: set_class_attributes, eval_expressions, eval_capture
+
+macro
+-----
+.. autofunction:: webtest.runner.macro
+
 
 :mod:`webtest.correlate`
 ========================

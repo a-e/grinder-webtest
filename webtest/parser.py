@@ -39,8 +39,8 @@ Or iterate over the requests and do something with them::
     >>> for request in my_test.requests:
     ...     do_something(request)
 
-The .webtest file is expected to have one or more ``Request`` elements, similar
-to the one below::
+The ``.webtest`` file is expected to have one or more ``Request`` elements,
+similar to the one below::
 
     <Request Method="POST" Url="http://www.example.com/">
       <Headers>
