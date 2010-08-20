@@ -233,7 +233,6 @@ The ``before_set`` will be run when a `WebtestRunner` instance is created
 be run when the instance is destroyed (the thread finishes execution, or is
 interrupted).
 
-
 """
 
 # Everything in this script should be compatible with Jython 2.2.1.
@@ -404,7 +403,8 @@ class WebtestRunner:
     _add_webtest_file = classmethod(_add_webtest_file)
 
 
-    def set_class_attributes(cls, test_sets,
+    def set_class_attributes(cls,
+                             test_sets,
                              before_set=None,
                              after_set=None,
                              sequence='sequential',
@@ -871,11 +871,14 @@ class WebtestRunner:
 
 
 def get_test_runner(test_sets,
-                    before_set=None, after_set=None,
-                    sequence='sequential', think_time=500, variables={},
-                    verbosity='quiet'):
+                    before_set=None,
+                    after_set=None,
+                    sequence='sequential',
+                    think_time=500,
+                    verbosity='quiet',
+                    variables={}):
     """Return a `TestRunner` base class that runs ``.webtest`` files in the
-    given ``test_sets``.
+    given list of `TestSet`\s.
 
         ``variables``
             Default variables for all `TestRunner` instances. Each
@@ -886,8 +889,8 @@ def get_test_runner(test_sets,
     See `WebtestRunner.set_class_attributes` for documentation on the other
     parameters.
     """
-    WebtestRunner.set_class_attributes(test_sets, before_set, after_set,
-        sequence, think_time, verbosity)
+    WebtestRunner.set_class_attributes(test_sets,
+        before_set, after_set, sequence, think_time, verbosity)
 
     # Define the actual TestRunner wrapper class. This allows us to delay
     # instantiation of the class until the Grinder threads run, while still

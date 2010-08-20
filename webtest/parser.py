@@ -10,12 +10,12 @@ anywhere, so all the elements and attributes used here are inferred from the
 
 This module defines three important classes:
 
+    `Webtest`
+        Parses a ``.webtest`` file and gets a list of `Request` objects
     `Request`
         Stores attributes and contents relevant to a single HTTP(S) request
     `WebtestHandler`
         Used internally by the sax XML parser
-    `Webtest`
-        Parses a ``.webtest`` file and gets a list of `Request` objects
 
 The `Webtest` class is the one you're most likely to use directly. Simply
 provide the name of a ``.webtest`` XML file::

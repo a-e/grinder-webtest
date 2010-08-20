@@ -1,48 +1,35 @@
 # correlate.py
 
-"""Correlating requests and responses
+"""This module provides a subclass of `~webtest.runner.WebtestRunner` designed
+to aid you with finding parameter values in HTTP responses. It does this by
+attempting to match parameter names found in each request to the response body
+of any HTTP request that preceded it.
 
-It would be nice to have a partially automated method of correlating webtest
-request parameters with any values that might be getting returned by responses
-leading up to that request.
+To use it, simply call `get_correlation_runner` in the same way that you call
+`~webtest.runner.get_test_runner`. When you run your main script, the log output
+will include additional information about which responses contain certain
+parameter names; this is useful in determining where you might be able to capture
+parameter values.
 
-When running in correlation mode, each request is examined. For each parameter
-name sent with the request, search in the response body of the preceding
-requests. This doesn't have to be too intelligent; for instance, if a request
-contains a parameter named "SID", look in prior responses to see if they
-contain the text "SID"
-
-If a name-based search fails, try a value-based search. This is probably less
-likely to work, especially in the case of parameters that change with each run
-(like SID), but for others it may yield results if the response does not
-actually contain the exact parameter name.
-
-The action to take after finding correlated parameters can vary; a simple
-solution would be to just print out the portion of the response that matched,
-with some surrounding context. An ideal solution would be automatic
-parameterization of the .webtest file, and automatic insertion of Capture
-expressions that could later be customized (since automatic regular expression
-inference would be pretty much unsolvable without some knowledge of the
-response format).
-
-How to tackle this? Well, maybe it'd be good to start with a TestRunner
-that is specialized for correlation. The TestRunner should not modify the
-original .webtest files, but instead write out a copy with the inferred
-correlations. Maybe a good approach would be to simply add comments to
-a copy of the .webtest file.
-
-The TestRunner will need to keep track of the full response body of
-each request, and may require a more foolproof way of identifying
-responses (more human-readable, that is, rather than just by index).
-
-Leverage as much of the existing webtest parser/runner code as possible.
+Note that the correlating test runner is much slower and more memory-intensive
+than the normal test runner (not to mention it can produce some gigantic log
+files). Use this only during development of your scripts, and never for an
+actual load test!
 """
-__docformat__ = 'restructuredtext en'
+
+# Import the necessary Grinder stuff
+# This is wrapped with exception handling, to allow Sphinx to import this
+# module for documentation purposes
+try:
+    from net.grinder.script.Grinder import grinder
+except ImportError:
+    print("Grinder module import failed.")
+    print("You may need to add grinder.jar to your classpath.")
+    print("Continuing blissfully onward...")
+else:
+    log = grinder.logger.output
 
 from runner import WebtestRunner
-from net.grinder.script.Grinder import grinder
-log = grinder.logger.output
-
 
 class CorrelationRunner (WebtestRunner):
     """A WebtestRunner that correlates requests and responses.
@@ -135,13 +122,23 @@ class CorrelationRunner (WebtestRunner):
 
 
 def get_correlation_runner(test_sets,
-                           before_set=None, after_set=None,
-                           sequence='sequential', think_time=500, variables={}):
-    """Return a TestRunner base class that runs .webtest files in the given
-    test_sets, and does correlation of request parameters with responses.
+                           before_set=None,
+                           after_set=None,
+                           sequence='sequential',
+                           think_time=500,
+                           verbosity='debug',
+                           variables={}):
+    """Return a `TestRunner` base class that runs ``.webtest`` files in the
+    given list of `~webtest.runner.TestSet`\s, and does correlation of request
+    parameters with responses.
+
+    All arguments to this function have the same meaning as their counterparts
+    in `~webtest.runner.get_test_runner`, with the possible exception of
+    ``verbosity``--the correlating runner is more verbose, printing certain
+    output about found correlations regardless of the ``verbosity`` setting.
     """
     WebtestRunner.set_class_attributes(test_sets,
-        before_set, after_set, sequence, think_time, 'debug')
+        before_set, after_set, sequence, think_time, verbosity)
 
     # Define the actual TestRunner wrapper class. This allows us to delay
     # instantiation of the class until the Grinder threads run, while still
