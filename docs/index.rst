@@ -69,52 +69,17 @@ Then create a `TestRunner` class::
     TestRunner = get_test_runner(test_sets)
 
 For the simplest tests, this is all you need to know. For more detail, refer
-to the `webtest.runner` module documentation.
+to the :doc:`runner` documentation.
 
 
-:mod:`webtest.runner`
-=====================
-
-.. automodule:: webtest.runner
-
-TestSet
+Modules
 -------
-.. autoclass:: webtest.runner.TestSet
-    :members:
+.. toctree::
+    :maxdepth: 1
 
-get_test_runner
----------------
-.. autofunction:: webtest.runner.get_test_runner
-
-WebtestRunner
--------------
-.. autoclass:: webtest.runner.WebtestRunner
-    :members: set_class_attributes, eval_expressions, eval_capture
-
-macro
------
-.. autofunction:: webtest.runner.macro
-
-
-:mod:`webtest.correlate`
-========================
-
-.. automodule:: webtest.correlate
-    :members:
-
-
-:mod:`webtest.parser`
-=====================
-
-.. automodule:: webtest.parser
-    :members:
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
+    runner
+    correlate
+    parser
 
 
 .. _Grinder Webtest: http://www.automation-excellence.com/software/grinder-webtest
