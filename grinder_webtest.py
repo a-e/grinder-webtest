@@ -6,31 +6,31 @@ particularly those exported by Fiddler2.
 To use this script, set the following in your grinder.properties:
 
     grinder.script = grinder_webtest.py
-    grinder.think = <delay between requests, in milliseconds>
 
-Then use webtest_sets to define which .webtest files to execute.
+Then use test_sets to define which .webtest files to execute.
 """
 
 # Everything in this script should be compatible with Jython 2.2.1.
 
-from net.grinder.script.Grinder import grinder
-from webtest.runner import TestSet, get_test_runner
-from webtest.correlate import get_correlation_runner
+# Uncomment this line if you need to use grinder methods, such as
+# those that get values from grinder.properties
+#from net.grinder.script.Grinder import grinder
 
-# Get the name of .webtest file and think time from grinder.properties
-webtest_think = grinder.properties.getInt('grinder.think', 500)
+# For example, if you wanted to get think time from grinder.properties
+#webtest_think = grinder.properties.getInt('grinder.think', 500)
 
-# Webtest sets
+
+# Test Sets
 # This is a list of TestSets to be executed by TestRunner instances.  Each
 # TestSet may include one or more .webtest filenames.  Any webtests that must
 # be run sequentially in the same TestRunner instance should be included in the
 # same TestSet; this allows variables captured in one of them to be carried
 # over to the next webtest. If a webtest can be run independently of all
 # others, then include it in a TestSet by itself.
-before_set = TestSet()
-after_set = TestSet()
+from webtest.runner import TestSet
 test_sets = [
-    TestSet(),
+    #TestSet('first.webtest'),
+    #TestSet('second.webtest'),
 ]
 
 
@@ -38,12 +38,28 @@ test_sets = [
 # Each of these will be stored separately by each TestRunner instance,
 # but initializing them here allows every TestRunner to use these
 # default values.
-variables = {
+var_defaults = {
+    #'USERNAME': 'Brian',
+    #'PASSWORD': 'Nazareth',
 }
 
-# Get the base class for the TestRunner
-TestRunner = get_test_runner(test_sets, before_set, after_set, 'thread', webtest_think, variables, 'info')
-# Uncomment this to use a correlating TestRunner
-#TestRunner = get_correlation_runner(test_sets, before_set, after_set, 'sequential', webtest_think, variables)
 
+# Define which test-runner-getter to use
+from webtest.runner import get_test_runner
+get_runner = get_test_runner
+
+# Uncomment these two lines to use a correlating TestRunner instead
+#from webtest.correlate import get_correlation_runner
+#get_runner = get_correlation_runner
+
+
+# Get the base class for the TestRunner
+TestRunner = get_runner(
+    test_sets,
+    before_set=None,
+    after_set=None,
+    sequence='sequential',
+    think_time=500,
+    verbosity='info',
+    variables=var_defaults)
 
