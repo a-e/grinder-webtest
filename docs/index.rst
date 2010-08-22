@@ -34,6 +34,7 @@ Features
 * Global and local variable parameters, with support for simple macros
 * Capturing and verifying response output using regular expressions
 * Sequential, thread-based, random, or weighted test sequencing
+* Automatic numbering of individual tests for logging and reporting purposes
 * Correlating test runner that matches parameters in HTTP responses
 * Four configurable levels of logging verbosity
 
@@ -49,15 +50,16 @@ At present, there are no official release packages, and no installed
 components; simply modify the files in your branch to suit your testing needs.
 
 
-Usage
+Setup
 -----
 In the root directory of the Grinder Webtest branch, you will find an example
 ``grinder_webtest.py`` script, along with a ``grinder.properties`` which uses
 it. Refer to the Grinder_ documentation for more on how to use
 ``grinder.properties``, and how to run test scripts.
 
-You can use ``grinder_webtest.py`` as the basis for your test script; all you
-need to do is include one or more `TestSet`\s containing ``.webtest`` files::
+You can use ``grinder_webtest.py`` as the template for your test script; all
+you need to do is include one or more `TestSet`\s containing ``.webtest``
+files::
 
     test_sets = [
         TestSet('tests/test1.webtest'),
@@ -70,6 +72,36 @@ Then create a `TestRunner` class::
 
 For the simplest tests, this is all you need to know. For more detail, refer
 to the :doc:`runner` documentation.
+
+
+Running
+-------
+To simplify the task of starting the Grinder console and/or agent, a
+``start.py`` script is provided. This script reads configuration settings from
+``conf.py``.
+
+First, edit ``conf.py`` and define the appropriate pathnames for your
+environment. On Linux, it might look something like this::
+
+    paths = {
+        'java':         '/usr/bin/java',
+        'jython':       '/usr/local/share/jython',
+        'grinder':      '/usr/share/grinder',
+        'properties':   './grinder.properties',
+    }
+
+Save the changes to ``conf.py``. You can run the tests in a single agent
+process like so::
+
+    jython start.py agent
+
+Or, if you would like to use the console, ensure your ``grinder.properties``
+has ``grinder.useConsole=true``, then run the console::
+
+    jython start.py console
+
+Then start agents in separate terminals. Refer to the `Grinder docs`_ for more
+information about the console, agents, and properties.
 
 
 Modules
@@ -87,4 +119,5 @@ Modules
 .. _Fiddler: http://www.fiddler2.com/fiddler2/
 .. _Launchpad: https://code.launchpad.net/grinder-webtest
 .. _Bazaar: http://bazaar.canonical.com/
+.. _Grinder docs: http://grinder.sourceforge.net/g3/getting-started.html
 

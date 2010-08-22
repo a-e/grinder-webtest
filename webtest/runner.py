@@ -103,7 +103,7 @@ first referenced::
 Here, ``INVOICE_ID`` is set to the value ``12345``; any later reference to
 ``INVOICE_ID`` in the same ``.webtest`` file (or in other ``.webtest`` files
 that come later in the same `TestSet`) will evaluate to ``12345``. See the
-`WebtestRunner.eval_expressions` method below for details.
+`WebtestRunner.eval_expressions` method for details.
 
 Variables can also be set to the result of a "macro"; this is useful if you
 need to refer to the current date (when the script runs), or for generating
@@ -112,7 +112,7 @@ random alphanumeric values::
     <FormPostParameter Name="INVOICE_DATE" Value="{TODAY = today(%y%m%d}"/>
     <FormPostParameter Name="INVOICE_ID" Value="{INVOICE_ID = random_digits(10)}"/>
 
-See the `macro` method below for details.
+See the `macro` method for details.
 
 Finally, and perhaps most importantly, if you need to set a variable's value
 from one of the HTTP responses in your ``.webtest``, you can use a capture
@@ -134,7 +134,7 @@ This will look for ``<sid>...</sid>`` in the response body, and set the
 variable ``SESSION_ID`` equal to its contents. You capture an arbitrary number
 of variable values in this way, then refer to them later in the ``.webtest``
 file (or in subsequent ``.webtest`` files in the same `TestSet`). See the
-`WebtestRunner.eval_capture` method below for additional details.
+`WebtestRunner.eval_capture` method for additional details.
 
 
 Sequencing
@@ -174,7 +174,7 @@ a random `TestSet` to run::
 With this, you might end up with something like:
 
     - Thread 0: billing
-    - Thread 1: billing
+    - Thread 1: invoice
     - Thread 2: invoice
     - Thread 3: billing
     - Thread 4: invoice
@@ -434,16 +434,17 @@ class WebtestRunner:
 
             'sequential'
                 Each thread runs all TestSets in order.
-            'random'
-                Each thread runs a random TestSet for each ``__call__``.
-            'weighted'
-                Each thread runs a random TestSet, with those having a
-                larger ``weight`` being run more often.
             'thread'
                 Thread 0 runs the first TestSet, Thread 1 runs the next, and so
                 on. If there are fewer threads than TestSets, some TestSets
                 will not be run. If there are more threads than TestSets, the
                 extra threads start over at 0 again.
+
+            'random'
+                Each thread runs a random TestSet for each ``__call__``.
+            'weighted'
+                Each thread runs a random TestSet, with those having a
+                larger ``weight`` being run more often.
 
         ``think_time``
             Time in milliseconds to sleep between each request.
@@ -452,14 +453,15 @@ class WebtestRunner:
             How chatty to be when logging. May be:
 
             'debug'
-                Everything, including response body
+                Highest verbosity. Log everything, including response body.
+                Warning: This may produce very large log files.
             'info'
-                Basic info, including request parameters and evaluated
-                expressions
+                Basic info, including all request parameters and evaluated
+                expressions.
             'quiet'
-                Minimal info, including .webtest filename and test names
+                Minimal output, including .webtest filename and test names.
             'error'
-                Only log errors, nothing else
+                Lowest verbosity. Only log errors, nothing else.
 
         """
         # Type-checking
