@@ -1,7 +1,16 @@
 #! /usr/bin/env jython
-
 # start.py
-usage = """Usage: jython start.py [agent|console]"""
+
+# This is a quick-and-dirty script to simplify running Grinder
+# agent and console from the command-line.
+
+usage = """Usage:
+
+  jython start.py [agent|console]
+
+This script reads configuration from conf.py in the current directory.
+Please edit conf.py to fit your environment before running start.py.
+"""
 
 import os
 import sys
@@ -29,15 +38,23 @@ if __name__ == '__main__':
     grinder_jar = abs(os.path.join(paths['grinder'], 'lib', 'grinder.jar'))
     classpath = grinder_jar + os.path.pathsep + os.getenv('CLASSPATH', '')
 
+    # Assemble the command-line
+    cmd = 'java -cp ' + classpath
+    # Add Jython path
+    cmd += ' -Dgrinder.jvm.arguments=-Dpython.home=' + abs(paths['jython'])
+
+    # Add library name for agent or console
+    # (Agent needs grinder.properties, but console does not)
     if arg == 'agent':
-        cmd = 'java -cp ' + classpath + \
-              ' net.grinder.Grinder ' + abs(paths['properties'])
+        cmd += ' net.grinder.Grinder ' + abs(paths['properties'])
+    else:
+        cmd += ' net.grinder.Console'
 
-    else: # 'console'
-        # Console does not need grinder.properties
-        cmd = 'java -cp ' + classpath + ' net.grinder.Console'
-
-    print("PATH: %s" % os.getenv('PATH'))
-    print("CLASSPATH: %s" % classpath)
     print("Running: %s" % cmd)
+
+    try:
+        os.system(cmd)
+    except KeyboardInterrupt:
+        print("Stopped Grinder %s" % arg)
+
 
