@@ -103,7 +103,7 @@ first referenced::
 Here, ``INVOICE_ID`` is set to the value ``12345``; any later reference to
 ``INVOICE_ID`` in the same ``.webtest`` file (or in other ``.webtest`` files
 that come later in the same `TestSet`) will evaluate to ``12345``. See the
-`WebtestRunner.eval_expressions` method for details.
+`WebtestRunner.eval_expressions` method below for details.
 
 Variables can also be set to the result of a "macro"; this is useful if you
 need to refer to the current date (when the script runs), or for generating
@@ -112,7 +112,7 @@ random alphanumeric values::
     <FormPostParameter Name="INVOICE_DATE" Value="{TODAY = today(%y%m%d}"/>
     <FormPostParameter Name="INVOICE_ID" Value="{INVOICE_ID = random_digits(10)}"/>
 
-See the `macro` method for details.
+See the `macro` method below for details.
 
 Finally, and perhaps most importantly, if you need to set a variable's value
 from one of the HTTP responses in your ``.webtest``, you can use a capture
@@ -134,7 +134,7 @@ This will look for ``<sid>...</sid>`` in the response body, and set the
 variable ``SESSION_ID`` equal to its contents. You capture an arbitrary number
 of variable values in this way, then refer to them later in the ``.webtest``
 file (or in subsequent ``.webtest`` files in the same `TestSet`). See the
-`WebtestRunner.eval_capture` method for additional details.
+`WebtestRunner.eval_capture` method below for additional details.
 
 
 Sequencing
@@ -174,7 +174,7 @@ a random `TestSet` to run::
 With this, you might end up with something like:
 
     - Thread 0: billing
-    - Thread 1: invoice
+    - Thread 1: billing
     - Thread 2: invoice
     - Thread 3: billing
     - Thread 4: invoice
@@ -262,6 +262,7 @@ else:
 
     # Set default headers for all connections
     connectionDefaults = HTTPPluginControl.getConnectionDefaults()
+    connectionDefaults.setTimeout(60000)
     connectionDefaults.defaultHeaders = [
         NVPair('Accept-Language', 'en-us'),
         NVPair('User-Agent',
@@ -342,6 +343,11 @@ class TestSet:
         """
         self.filenames = list(webtest_filenames)
         self.weight = kwargs.get('weight', 1.0)
+
+
+class CaptureFailed (RuntimeError):
+    """Raised when a capture expression is not matched."""
+    pass
 
 
 class WebtestRunner:
@@ -434,17 +440,16 @@ class WebtestRunner:
 
             'sequential'
                 Each thread runs all TestSets in order.
-            'thread'
-                Thread 0 runs the first TestSet, Thread 1 runs the next, and so
-                on. If there are fewer threads than TestSets, some TestSets
-                will not be run. If there are more threads than TestSets, the
-                extra threads start over at 0 again.
-
             'random'
                 Each thread runs a random TestSet for each ``__call__``.
             'weighted'
                 Each thread runs a random TestSet, with those having a
                 larger ``weight`` being run more often.
+            'thread'
+                Thread 0 runs the first TestSet, Thread 1 runs the next, and so
+                on. If there are fewer threads than TestSets, some TestSets
+                will not be run. If there are more threads than TestSets, the
+                extra threads start over at 0 again.
 
         ``think_time``
             Time in milliseconds to sleep between each request.
@@ -453,15 +458,14 @@ class WebtestRunner:
             How chatty to be when logging. May be:
 
             'debug'
-                Highest verbosity. Log everything, including response body.
-                Warning: This may produce very large log files.
+                Everything, including response body
             'info'
-                Basic info, including all request parameters and evaluated
-                expressions.
+                Basic info, including request parameters and evaluated
+                expressions
             'quiet'
-                Minimal output, including .webtest filename and test names.
+                Minimal info, including .webtest filename and test names
             'error'
-                Lowest verbosity. Only log errors, nothing else.
+                Only log errors, nothing else
 
         """
         # Type-checking
@@ -525,6 +529,9 @@ class WebtestRunner:
         """
         # Dictionary of instance variables, indexed by name
         self.variables = variables
+
+        # Delay reporting, to allow potential errors to be reported
+        grinder.statistics.delayReports = True
 
         # Run tests in the before_set
         if self.before_set:
@@ -655,7 +662,7 @@ class WebtestRunner:
 
             {HREF = <a href="([^"]+)">}
 
-        If any capture expression is not found in the response, a `RuntimeError`
+        If any capture expression is not found in the response, a `CaptureFailed`
         is raised. This makes them useful for verification too--if you want to
         ensure that a response contains expected text, just include a capture
         expression that looks for it. In this case, you can leave out the
@@ -734,7 +741,7 @@ class WebtestRunner:
                 log("!!!!!! No match for %s" % regexp)
                 log("!!!!!! Response body:")
                 log(body)
-                raise RuntimeError("No match for %s" % regexp)
+                raise CaptureFailed("No match for %s" % regexp)
 
             # Set the given variable name to the first parenthesized expression
             if match.groups():
@@ -809,35 +816,33 @@ class WebtestRunner:
     def run_test_set(self, test_set):
         """Run all ``.webtest`` files in the given `TestSet`.
         """
-        for filename in test_set.filenames:
-            if WebtestRunner.verbosity != 'error':
-                log("==== Executing: %s ==========" % filename)
+        # TODO: Reduce the amount of stuff inside this try block
+        try:
+            for filename in test_set.filenames:
+                if WebtestRunner.verbosity != 'error':
+                    log("==== Executing: %s ==========" % filename)
 
-            # Execute all requests in this test set, in order
-            for test, wrapper, request in WebtestRunner.webtest_requests[filename]:
-                # Execute this request
-                try:
+                # Execute all requests in this test set, in order
+                for test, wrapper, request in WebtestRunner.webtest_requests[filename]:
+                    # Execute this request
                     response = self.execute(test, wrapper, request)
-                # If problems occurred, report an error and re-raise
-                except RuntimeError:
-                    grinder.statistics.forLastTest.success = False
-                    raise
 
-                # If response was not valid, report an error
-                if response.getStatusCode() >= 400:
-                    grinder.statistics.forLastTest.success = False
+                    # If response was not valid, report an error
+                    if response.getStatusCode() >= 400:
+                        grinder.statistics.forLastTest.success = False
 
-                # Sleep
-                grinder.sleep(WebtestRunner.think_time)
+                    # Sleep
+                    grinder.sleep(WebtestRunner.think_time)
+
+        # If problems occurred, report an error
+        except CaptureFailed:
+            grinder.statistics.forLastTest.success = False
 
 
     def __call__(self):
         """Execute all requests according to the class attribute ``sequence``,
         waiting ``think_time`` between each request.
         """
-        # Delay reporting, to allow potential errors to be reported
-        grinder.statistics.delayReports = True
-
         # Determine which sequencing to use
         sequence = WebtestRunner.sequence
         # Run a single TestSet at random.
