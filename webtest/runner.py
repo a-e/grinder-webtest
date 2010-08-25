@@ -627,7 +627,7 @@ class WebtestRunner:
                 else:
                     raise NameError("Variable '%s' is not initialized!" % name)
 
-            # Unknown
+            # Invalid expression
             else:
                 raise SyntaxError(
                   "Syntax error '%s' in value '%s'" % (expression, value))
@@ -724,8 +724,9 @@ class WebtestRunner:
             # Error if this expression doesn't look like a capture
             match = re_capture.search(expression)
             if not match:
-                raise SyntaxError("Syntax error in capture expression '%s'" % \
-                                  expression)
+                message = "Syntax error in capture expression '%s'" % expression
+                message += " in request defined on line %d" % request.line_number
+                raise SyntaxError(message)
 
             # Get the two parts of the capture expression
             name, value = match.groups()
@@ -739,6 +740,7 @@ class WebtestRunner:
             match = re.search(regexp, body)
             if not match:
                 log("!!!!!! No match for %s" % regexp)
+                log("!!!!!! In request defined on line %d" % request.line_number)
                 log("!!!!!! Response body:")
                 log(body)
                 raise CaptureFailed("No match for %s" % regexp)
@@ -787,7 +789,9 @@ class WebtestRunner:
             response = wrapper.GET(url, parameters, headers)
 
         else:
-            raise ValueError("Unknown HTTP method: %s" % request.method)
+            message = "Unknown HTTP method: '%s'" % request.method
+            message += " in request defined on line %d" % request.line_number
+            raise ValueError(message)
 
         if WebtestRunner.verbosity == 'debug':
             # Log the response

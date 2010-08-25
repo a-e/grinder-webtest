@@ -39,6 +39,13 @@ Features
 * Four configurable levels of logging verbosity
 
 
+License
+-------
+This software is open source, under the terms of the `simplified BSD license`_.
+
+.. _simplified BSD license: http://www.opensource.org/licenses/bsd-license.php
+
+
 Installation
 ------------
 To install Grinder Webtest, obtain a copy of the branch from Launchpad_ using
@@ -48,6 +55,9 @@ Bazaar_::
 
 At present, there are no official release packages, and no installed
 components; simply modify the files in your branch to suit your testing needs.
+
+The only dependency aside from Grinder is Jython_. Due to some limitations in
+earlier versions of Grinder, this module was designed to work with Jython 2.2.1.
 
 
 Setup
@@ -116,6 +126,7 @@ Modules
 
 .. _Grinder Webtest: http://www.automation-excellence.com/software/grinder-webtest
 .. _Grinder: http://grinder.sourceforge.net/
+.. _Jython: http://www.jython.org/
 .. _Fiddler: http://www.fiddler2.com/fiddler2/
 .. _Launchpad: https://code.launchpad.net/grinder-webtest
 .. _Bazaar: http://bazaar.canonical.com/

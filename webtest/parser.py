@@ -94,7 +94,7 @@ class Request:
             A list of ``(Name, Value)`` for the request parameters
 
     """
-    def __init__(self, attrs):
+    def __init__(self, attrs, line_number=0):
         """Create a Request with the given attributes.
         """
         self.url = attrs.get('Url', '')
@@ -107,6 +107,8 @@ class Request:
         self.capture = ''
         # Human-readable description of the request
         self.description = ''
+        # Line number where this request was defined
+        self.line_number = line_number
 
 
     def _add_attrs(self, attrs, to_list):
@@ -200,6 +202,15 @@ class WebtestHandler (sax.handler.ContentHandler):
         self.requests = []
         # String to indicate when we're inside particular elements
         self.in_element = ''
+        # Locator used to track line numbers
+        self.locator = None
+
+
+    def setDocumentLocator(self, locator):
+        """Set the document locator, for tracking line numbers.
+        This is set by the parser, and is used in `startElement`.
+        """
+        self.locator = locator
 
 
     def startElement(self, name, attrs):
@@ -215,7 +226,7 @@ class WebtestHandler (sax.handler.ContentHandler):
 
         # Request element? Create a new Request object
         if name == 'Request':
-            self.request = Request(attrs)
+            self.request = Request(attrs, self.locator.getLineNumber())
 
         # Header element? Add the header to the current request
         elif name == 'Header':
