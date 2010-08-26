@@ -38,9 +38,10 @@ Another way would be to create a separate `TestSet` instance for each test::
     ]
     TestRunner = get_test_runner(my_tests)
 
-Here, each ``.webtest`` would be run in a separate `WebtestRunner` instance; you
-might take this approach if all three tests are independent, and have no need
-of running in sequence or sharing variables.
+Here, each ``.webtest`` could be run in a separate `WebtestRunner` instance,
+and not necessarily in sequential order. You might take this approach if all
+three tests are independent, and have no need of running in sequence or sharing
+variables.
 
 The `TestSet` might also be used for logical grouping of related tests. For
 example, if you have some tests for invoicing, and others for billing, you
