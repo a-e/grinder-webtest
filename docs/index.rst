@@ -20,7 +20,7 @@ made by a web-enabled application. Since Fiddler is not designed for load
 testing, it became necessary to find an alternative method for running the
 scenarios it recorded.
 
-Fiddler can export a session in Visual Studio ``.webtest`` format, but Grinder
+Fiddler can export sessions in Visual Studio ``.webtest`` format, but Grinder
 has no native support for this. Hence, this module was developed, to allow
 transparent execution of these files as part of a load test. Since the
 ``.webtest`` format is plain-text XML, it's possible to extend it to allow
@@ -63,7 +63,7 @@ earlier versions of Grinder, this module was designed to work with Jython 2.2.1.
 Setup
 -----
 In the root directory of the Grinder Webtest branch, you will find an example
-``grinder_webtest.py`` script, along with a ``grinder.properties`` which uses
+``grinder_webtest.py`` script, along with a ``grinder.properties`` that uses
 it. Refer to the Grinder_ documentation for more on how to use
 ``grinder.properties``, and how to run test scripts.
 

@@ -161,11 +161,11 @@ Now, if you run two threads, then the first thread will run the first
 more than two threads, then the extra threads will cycle through the list of
 available `TestSet`\s again:
 
-    - Thread 0: invoice
-    - Thread 1: billing
-    - Thread 2: invoice
-    - Thread 3: billing
-    - ...
+* Thread 0: invoice
+* Thread 1: billing
+* Thread 2: invoice
+* Thread 3: billing
+* ...
 
 Another option is to use random sequencing, so that each thread will choose
 a random `TestSet` to run::
@@ -174,12 +174,12 @@ a random `TestSet` to run::
 
 With this, you might end up with something like:
 
-    - Thread 0: billing
-    - Thread 1: billing
-    - Thread 2: invoice
-    - Thread 3: billing
-    - Thread 4: invoice
-    - ...
+* Thread 0: billing
+* Thread 1: billing
+* Thread 2: invoice
+* Thread 3: billing
+* Thread 4: invoice
+* ...
 
 Finally, it's possible to assign a "weight" to each `TestSet`; this is similar
 to random sequencing, except that it allows you to control how often each each
@@ -206,11 +206,11 @@ using percentages::
 In other words, the invoice tests will be run 25% of the time, and the billing
 tests 75% of the time. In this case, you might end up with the following:
 
-    - Thread 0: billing
-    - Thread 1: billing
-    - Thread 2: invoice
-    - Thread 3: billing
-    - ...
+* Thread 0: billing
+* Thread 1: billing
+* Thread 2: invoice
+* Thread 3: billing
+* ...
 
 As with random sequencing, each thread will choose a `TestSet` at random, with
 the likelihood of choosing a particular `TestSet` being determined by the
