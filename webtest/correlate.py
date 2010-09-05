@@ -35,9 +35,11 @@ class CorrelationRunner (WebtestRunner):
     """A WebtestRunner that correlates requests and responses.
     """
     def __init__(self, **variables):
-        WebtestRunner.__init__(self, **variables)
         # Dict of lists of HTTPResponses, indexed by webtest filename
+        # (This must be initialized before WebtestRunner.__init__,
+        # since __init__ may run before_set tests)
         self.webtest_responses = {}
+        WebtestRunner.__init__(self, **variables)
 
 
     def run_test_set(self, test_set):
