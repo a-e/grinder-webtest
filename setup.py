@@ -6,7 +6,7 @@
 
 from distutils.core import setup
 
-setup(name='Grinder Webtest',
+setup(name='Grinder-Webtest',
       version='0.1',
       description='Wrapper for running .webtest files with Grinder',
       author='Eric Pierce',
