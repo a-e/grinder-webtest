@@ -48,16 +48,24 @@ This software is open source, under the terms of the `simplified BSD license`_.
 
 Installation
 ------------
-To install Grinder Webtest, obtain a copy of the branch from Launchpad_ using
-Bazaar_::
+You can obtain Grinder Webtest by downloading a official release from the
+`downloads page`_, then extracting it to a location on your disk. In later
+versions of Jython_, you can install like this::
+
+    jython setup.py install
+
+Alternatively, you can just build and run your tests directly in the source
+directory (it'll probably work better that way).
+
+If you want a copy of the latest development version, branch it from Launchpad_
+using Bazaar_::
 
     bzr branch lp:grinder-webtest
 
-At present, there are no official release packages, and no installed
-components; simply modify the files in your branch to suit your testing needs.
-
 The only dependency aside from Grinder is Jython_. Due to some limitations in
 earlier versions of Grinder, this module was designed to work with Jython 2.2.1.
+
+.. _downloads page: https://launchpad.net/grinder-webtest/+download
 
 
 Setup
