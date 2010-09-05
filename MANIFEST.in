@@ -1,0 +1,5 @@
+include LICENSE.txt grinder.properties grinder_webtest.py start.py
+recursive-include tests *
+recursive-include docs Makefile make.bat conf.py *.rst
+recursive-include docs/_static *
+
