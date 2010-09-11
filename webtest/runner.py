@@ -141,16 +141,27 @@ file (or in subsequent ``.webtest`` files in the same `TestSet`). See the
 Sequencing
 ----------
 
-The default behavior is for each `WebtestRunner` instance (each Grinder worker
-thread, that is) to run all of the tests in sequential order. Using the same
-example as above::
+When calling `get_test_runner`, you can use the ``sequence`` keyword to control
+how the tests are executed. Using the same example as above::
 
     my_tests = [
         TestSet('invoice_1.webtest', 'invoice_2.webtest'),
         TestSet('billing_1.webtest', 'billing_2.webtest'),
     ]
 
-Perhaps you want the first thread to run the invoice tests, and the second
+The default behavior is for each `WebtestRunner` instance (each Grinder worker
+thread, that is) to run all of the tests in sequential order. This is the same
+as passing ``sequence='sequential'``::
+
+    TestRunner = get_test_runner(my_tests, sequence='sequential')
+
+and would give this runtime behavior:
+
+* Thread 0: invoice, billing
+* Thread 1: invoice, billing
+* ...
+
+But perhaps you want the first thread to run the invoice tests, and the second
 thread to run the billing tests. To do this, pass ``sequence='thread'`` to
 `get_test_runner`::
 
