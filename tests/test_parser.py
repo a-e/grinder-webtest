@@ -17,6 +17,9 @@ def test_well_formed():
 
     # Ensure the Webtest fields match expectations
     assert w.filename == login_file
+    assert len(w.requests) == 1
+    assert 'login.webtest' in str(w)
+    assert 'Login to the application' in str(w)
 
     # Ensure the request matches expectations
     req = w.requests[0]
@@ -44,6 +47,7 @@ def test_malformed():
         os.path.join(data_dir, 'malformed_1.webtest'),
         os.path.join(data_dir, 'malformed_2.webtest'),
         os.path.join(data_dir, 'malformed_3.webtest'),
+        os.path.join(data_dir, 'malformed_4.webtest'),
     ]
     for filename in malformed_files:
         assert_raises(parser.MalformedXML, parser.Webtest, filename)
