@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A webtest file with malformed XML -->
+<TestCase>
+  <Items>
+    <!-- FormPostHttpBody is supposed to be inside a Request -->
+    <FormPostHttpBody>
+      <FormPostParameter Name="username" Value="{USERNAME}" UrlEncode="True" />
+      <FormPostParameter Name="password" Value="{PASSWORD}" UrlEncode="True" />
+    </FormPostHttpBody>
+  </Items>
+</TestCase>
+

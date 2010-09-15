@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A webtest file with malformed XML -->
+<TestCase>
+  <Items>
+    <!-- Description outside a Request -->
+    <Description>This should not be here</Description>
+    <Request Method="GET" Url="http://{SERVER}/login">
+      <Description>Login to the application</Description>
+      <FormPostHttpBody>
+        <FormPostParameter Name="username" Value="{USERNAME}" UrlEncode="True" />
+        <FormPostParameter Name="password" Value="{PASSWORD}" UrlEncode="True" />
+      </FormPostHttpBody>
+    </Request>
+  </Items>
+</TestCase>
+

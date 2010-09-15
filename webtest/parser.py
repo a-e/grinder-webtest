@@ -285,9 +285,6 @@ class WebtestHandler (sax.handler.ContentHandler):
 
         # For elements with character content, reset in_element
         elif name in ('StringHttpBody', 'Capture', 'Description'):
-            if name != self.in_element:
-                raise MalformedXML("Got ending tag %d, expected %d" % \
-                                   (name, self.in_element))
             self.in_element = ''
 
         # No action needed for closing other elements
@@ -321,7 +318,10 @@ class Webtest:
         self.filename = filename
         # Parse the given filename
         infile = open(filename, 'r')
-        self.saxparser.parse(infile)
+        try:
+            self.saxparser.parse(infile)
+        except sax.SAXParseException, e:
+            raise MalformedXML(e)
         infile.close()
         # Store a reference to the list of requests
         self.requests = self._handler.requests

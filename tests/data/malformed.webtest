@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A webtest file with malformed XML -->
+<TestCase>
+  <Items>
+    <!-- Headers are supposed to be inside a Request -->
+    <Headers>
+      <Header Name="Content-Type" Value="text/xml; charset=utf-8" />
+    </Headers>
+    <Request Method="GET" Url="http://{SERVER}/login">
+      <FormPostHttpBody>
+        <FormPostParameter Name="username" Value="{USERNAME}" UrlEncode="True" />
+        <FormPostParameter Name="password" Value="{PASSWORD}" UrlEncode="True" />
+      </FormPostHttpBody>
+    </Request>
+  </Items>
+</TestCase>
+

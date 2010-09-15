@@ -80,8 +80,8 @@ you need to do is include one or more `TestSet`\s containing ``.webtest``
 files::
 
     test_sets = [
-        TestSet('tests/test1.webtest'),
-        TestSet('tests/test2.webtest'),
+        TestSet('test1.webtest'),
+        TestSet('test2.webtest'),
     ]
 
 Then create a `TestRunner` class::

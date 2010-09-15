@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestCase>
+  <Items>
+    <Request Method="GET" Url="http://{SERVER}/login">
+      <Description>Login to the application</Description>
+      <Headers>
+        <Header Name="Content-Type" Value="text/xml; charset=utf-8" />
+      </Headers>
+      <FormPostHttpBody>
+        <FormPostParameter Name="username" Value="{USERNAME}" UrlEncode="True" />
+        <FormPostParameter Name="password" Value="{PASSWORD}" UrlEncode="True" />
+      </FormPostHttpBody>
+      <StringHttpBody ContentType="text/xml; charset=utf-8">
+        Some text that is parsed as character data.
+      </StringHttpBody>
+      <Capture><![CDATA[{SESSION_ID = <SID>([^<]+)</SID>}]]></Capture>
+    </Request>
+  </Items>
+</TestCase>
+
