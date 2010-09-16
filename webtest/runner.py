@@ -268,6 +268,7 @@ except ImportError:
     print("Grinder module import failed.")
     print("You may need to add grinder.jar to your classpath.")
     print("Continuing blissfully onward...")
+    from stub import Test, NVPair, HTTPRequest, grinder, log
 else:
     # Convenient access to logger
     log = grinder.logger.output
@@ -289,7 +290,7 @@ else:
     ]
 
 
-def macro(macro_name, args):
+def macro(macro_name, args=''):
     """Expand a macro and return the result.
 
     Supported macros:
@@ -730,7 +731,7 @@ class WebtestRunner:
         re_capture = re.compile('^{([_A-Z0-9]+) ?= ?(.+)}$')
 
         # Get response body
-        body = response.getText()
+        body = str(response.getText())
         # Evaluate each {...} expression found in the list of request.captures()
         for expression in request.captures():
             # Error if this expression doesn't look like a capture
@@ -749,6 +750,8 @@ class WebtestRunner:
                 log("Looking in response for match to regexp: %s" % regexp)
 
             # Error if the regexp doesn't match part of the response body
+            print(regexp)
+            print(body)
             match = re.search(regexp, body)
             if not match:
                 log("!!!!!! No match for %s" % regexp)

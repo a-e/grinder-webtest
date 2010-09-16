@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A webtest file with malformed XML -->
+<TestCase>
+  <Items>
+    <Request Method="GET" Url="http://{SERVER}/login">
+      <Description>Login to the application</Description>
+      <FormPostHttpBody>
+        <FormPostParameter Name="username" Value="{USERNAME}" UrlEncode="True" />
+        <FormPostParameter Name="password" Value="{PASSWORD}" UrlEncode="True" />
+      </FormPostHttpBody>
+    <!-- Parsing error, missing closing tag for Request -->
+  </Items>
+</TestCase>
+
