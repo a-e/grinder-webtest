@@ -64,6 +64,10 @@ using Bazaar_::
 
 The only dependency aside from Grinder is Jython_. Due to some limitations in
 earlier versions of Grinder, this module was designed to work with Jython 2.2.1.
+Grinder Webtest was developed using Grinder 3.2, and versions of Grinder as
+recent as 3.4 are known to be compatible with Jython 2.2.1. Grinder Webtest has
+not been tested with newer versions of Jython; if you try a newer version,
+please let us know whether or not it works.
 
 .. _downloads page: https://launchpad.net/grinder-webtest/+download
 
