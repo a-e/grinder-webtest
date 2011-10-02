@@ -3,7 +3,7 @@ Grinder Webtest
 
 This project is an add-on for Grinder which allows it to run .webtest files.
 
-[Full documentation is on ReadTheDocs](http://readthedocs.org/projects/wapcaplet/grinder-webtest/docs/)
+[Read The Docs](http://grinder-webtest.readthedocs.org/en/latest/).
 
 
 Copyright
