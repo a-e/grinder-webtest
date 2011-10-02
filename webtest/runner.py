@@ -464,8 +464,8 @@ class WebtestRunner:
         # Ensure that verbosity is valid
         if verbosity not in ('debug', 'info', 'quiet', 'error'):
             raise ValueError("verbosity must be 'debug', 'info', 'quiet', or 'error'.")
-        # Ensure that macro class is derived from macro.Macro
-        if not issubclass(macro_class, macro.Macro):
+        # Ensure that macro_class is a class, and is derived from macro.Macro
+        if not (type(macro_class) == type(macro.Macro) and issubclass(macro_class, macro.Macro)):
             raise ValueError("macro_class must be a subclass of webtest.macro.Macro")
 
         # Initialize all class variables
@@ -873,7 +873,8 @@ def get_test_runner(test_sets,
                     sequence='sequential',
                     think_time=500,
                     verbosity='quiet',
-                    variables={}):
+                    variables={},
+                    macro_class=macro.Macro):
     """Return a `TestRunner` base class that runs ``.webtest`` files in the
     given list of `TestSet`\s.
 
@@ -887,7 +888,7 @@ def get_test_runner(test_sets,
     parameters.
     """
     WebtestRunner.set_class_attributes(test_sets,
-        before_set, after_set, sequence, think_time, verbosity)
+        before_set, after_set, sequence, think_time, verbosity, macro_class)
 
     # Define the actual TestRunner wrapper class. This allows us to delay
     # instantiation of the class until the Grinder threads run, while still
