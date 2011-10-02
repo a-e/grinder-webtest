@@ -255,6 +255,7 @@ import datetime
 
 # Import the webtest parser
 import parser
+import macro
 
 # Import the necessary Grinder stuff
 # This is wrapped with exception handling, to allow Sphinx to import this
@@ -288,51 +289,6 @@ else:
                '.NET CLR 3.5.30729)'),
         NVPair('Accept', '*/*'),
     ]
-
-
-def macro(macro_name, args=''):
-    """Expand a macro and return the result.
-
-    Supported macros:
-
-        ``random_digits(num)``
-            Generate a random ``num``-digit string
-        ``random_letters(num)``
-            Generate a random ``num``-character string of letters
-        ``random_alphanumeric(num)``
-            Generate a random ``num``-character alphanumeric string
-        ``today(format)``
-            Return today's date in the given format. For example,
-            ``%m%d%y`` for ``MMDDYY`` format. See the datetime_
-            module documentation for allowed format strings.
-        ``today_plus(days, format)``
-            Return today plus some number of days, in the given format.
-
-    .. _datetime: http://docs.python.org/library/datetime.html
-    """
-    def _sample(choices, how_many):
-        """Return `how_many` randomly-chosen items from `choices`.
-        """
-        return [random.choice(choices) for x in range(how_many)]
-
-    if macro_name == 'random_digits':
-        return ''.join(_sample('0123456789', int(args)))
-
-    elif macro_name == 'random_letters':
-        return ''.join(_sample('ABCDEFGHIJKLMNOPQRSTUVWXYZ', int(args)))
-
-    elif macro_name == 'random_alphanumeric':
-        return ''.join(_sample('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', int(args)))
-
-    elif macro_name == 'today':
-        return datetime.date.today().strftime(args)
-
-    elif macro_name == 'today_plus':
-        days, format = [arg.strip() for arg in args.split(',')]
-        return (datetime.date.today() + datetime.timedelta(int(days))).strftime(format)
-
-    else:
-        raise NameError("Unknown macro: %s" % macro_name)
 
 
 class TestSet:
@@ -429,7 +385,9 @@ class WebtestRunner:
                              after_set=None,
                              sequence='sequential',
                              think_time=500,
-                             verbosity='quiet'):
+
+                             verbosity='quiet',
+                             macro_class=macro.Macro):
         """Set attributes that affect all `WebtestRunner` instances.
 
         ``test_sets``
@@ -480,6 +438,11 @@ class WebtestRunner:
             'error'
                 Only log errors, nothing else
 
+        ``macro_class``
+            The class where macro functions are defined. Uses the standard
+            `~webtest.macro.Macro` class by default; pass a derived class
+            if you want to define your own macros.
+
         """
         # Type-checking
         # Ensure that test_sets is a list
@@ -501,6 +464,9 @@ class WebtestRunner:
         # Ensure that verbosity is valid
         if verbosity not in ('debug', 'info', 'quiet', 'error'):
             raise ValueError("verbosity must be 'debug', 'info', 'quiet', or 'error'.")
+        # Ensure that macro class is derived from macro.Macro
+        if not issubclass(macro_class, macro.Macro):
+            raise ValueError("macro_class must be a subclass of webtest.macro.Macro")
 
         # Initialize all class variables
         cls.test_sets = test_sets
@@ -509,6 +475,7 @@ class WebtestRunner:
         cls.sequence = sequence
         cls.think_time = think_time
         cls.verbosity = verbosity
+        cls.macro_class = macro_class
 
         # Add all webtest filenames in all test sets
         for test_set in cls.test_sets:
@@ -577,7 +544,8 @@ class WebtestRunner:
                 method for available macros.
 
         Any given value that does not match any of these forms is simply
-        returned as-is.
+        returned as-is. If you need to use literal ``{`` or ``}`` characters in
+        a string, precede them with a backslash, like ``\\{`` or ``\\}``.
 
         The given value may contain multiple ``{...}`` expressions, and may have
         additional text before or after any expression. For example, if you
@@ -601,7 +569,7 @@ class WebtestRunner:
         # See: http://osdir.com/ml/java.grinder.user/2003-07/msg00030.html
         import re
         # Match the first {...} expression
-        re_expansion = re.compile('([^{]*){([^}]+)}(.*)')
+        re_expansion = re.compile(r'((?:[^{\\]|\\.)*){((?:[^}\\]|\\.)*)}(.*)')
         # VAR_NAME=macro(args)
         re_var_macro = re.compile('([_A-Z0-0-99]+) ?= ?([_a-z]+)\(([^)]*)\)')
         # VAR_NAME=literal
@@ -611,6 +579,8 @@ class WebtestRunner:
         # VAR_NAME
         re_var = re.compile('([_A-Z0-9]+)')
 
+        macro = WebtestRunner.macro_class()
+
         # Match and replace until no {...} expressions are found
         to_expand = re_expansion.match(value)
         while to_expand:
@@ -619,7 +589,7 @@ class WebtestRunner:
             # VAR_NAME=macro(args)
             if re_var_macro.match(expression):
                 name, macro_name, args = re_var_macro.match(expression).groups()
-                expanded = self.variables[name] = macro(macro_name, args)
+                expanded = self.variables[name] = macro.invoke(macro_name, args)
 
             # VAR_NAME=literal
             elif re_var_literal.match(expression):
@@ -630,7 +600,7 @@ class WebtestRunner:
             # macro(args)
             elif re_macro.match(expression):
                 macro_name, args = re_macro.match(expression).groups()
-                expanded = macro(macro_name, args)
+                expanded = macro.invoke(macro_name, args)
 
             # VAR_NAME
             elif re_var.match(expression):

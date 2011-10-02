@@ -4,32 +4,9 @@
 """
 
 import os
-import re
 from . import data_dir
 from nose.tools import assert_raises
 from webtest import runner
-
-def test_macro():
-    """Test the `macro` function.
-    """
-    # Random digits
-    digits = runner.macro('random_digits', 5)
-    assert re.match('^\d{5}$', digits)
-    # Random letters
-    letters = runner.macro('random_letters', 5)
-    assert re.match('^[A-Z]{5}$', letters)
-    # Random alphanumeric
-    alpha = runner.macro('random_alphanumeric', 5)
-    assert re.match('^[A-Z0-9]{5}$', alpha)
-    # Today
-    today = runner.macro('today', '%Y/%m/%d')
-    assert re.match('^\d{4}/\d{2}/\d{2}$', today)
-    # Tomorrow
-    tomorrow = runner.macro('today_plus', '1, %Y/%m/%d')
-    assert re.match('^\d{4}/\d{2}/\d{2}$', tomorrow)
-    # Unknown macro
-    assert_raises(NameError, runner.macro, 'no_such_macro')
-
 
 def test_TestSet():
     """Test the `TestSet` class.
