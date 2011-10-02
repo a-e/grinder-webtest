@@ -4,9 +4,11 @@
 """
 
 import os
+import unittest
 from . import data_dir
 from webtest import runner
-import unittest
+from webtest import parser
+from webtest import stub
 
 class TestSetTest (unittest.TestCase):
     def test_TestSet(self):
@@ -89,9 +91,9 @@ class TestWebtestRunner (unittest.TestCase):
             'PASSWORD': 'f00b4r',
         }
         # Get a dummy test runner instance
-        TR = runner.get_test_runner([], variables=my_vars)()
+        tr = runner.get_test_runner([], variables=my_vars)()
         # Shortcut to eval
-        ev = TR.eval_expressions
+        ev = tr.eval_expressions
 
         # Simple variable expansion
         self.assertEqual(ev('{SERVER}'), 'www.google.com')
@@ -117,4 +119,68 @@ class TestWebtestRunner (unittest.TestCase):
         self.assertRaises(NameError, ev, '{BOGUS}')
         # Exception for bad expression
         self.assertRaises(SyntaxError, ev, '{lowercase_var}')
+
+
+    def test_eval_capture(self):
+        """Capture expressions in webtest requests are correctly evaluated.
+        """
+        login_file = os.path.join(data_dir, 'login.webtest')
+        login_test = runner.TestSet(login_file)
+
+        # Get the test runner instance
+        tr = runner.get_test_runner([login_test])()
+
+        # Get the first request from login.webtest
+        request = parser.Webtest(login_file).requests[0]
+
+        # Construct a dummy response
+        response = stub.Response(
+            """<?xml version="1.0" encoding="utf-8"?>
+            <SessionData><SID>314159265</SID></SessionData>
+            """)
+        tr.eval_capture(request, response)
+        self.assertTrue('SESSION_ID' in tr.variables)
+        self.assertEqual(tr.variables['SESSION_ID'], '314159265')
+
+
+    def test_eval_capture_syntax_error(self):
+        """eval_capture raises an exception on malformed capture expressions.
+        """
+        login_file = os.path.join(data_dir, 'malformed_capture.webtest')
+        login_test = runner.TestSet(login_file)
+
+        # Get the test runner instance
+        tr = runner.get_test_runner([login_test])()
+
+        # Get the first request from login.webtest
+        request = parser.Webtest(login_file).requests[0]
+
+        # Construct a dummy response
+        response = stub.Response(
+            """<?xml version="1.0" encoding="utf-8"?>
+            <SessionData><SID>314159265</SID></SessionData>
+            """)
+        # eval_capture raises an exception
+        self.assertRaises(SyntaxError, tr.eval_capture, request, response)
+
+
+    def test_eval_capture_not_found(self):
+        """eval_capture raises an exception when a capture expression is not matched
+        """
+        login_file = os.path.join(data_dir, 'login.webtest')
+        login_test = runner.TestSet(login_file)
+
+        # Get the test runner instance
+        tr = runner.get_test_runner([login_test])()
+
+        # Get the first request from login.webtest
+        request = parser.Webtest(login_file).requests[0]
+
+        # Construct a dummy response
+        response = stub.Response(
+            """<?xml version="1.0" encoding="utf-8"?>
+            <SessionData><NOT_SID>314159265</NOT_SID></SessionData>
+            """)
+        # eval_capture raises an exception
+        self.assertRaises(runner.CaptureFailed, tr.eval_capture, request, response)
 

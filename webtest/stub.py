@@ -37,3 +37,10 @@ class Test:
     def wrap(self, *args):
         return Stub()
 
+class Response:
+    def __init__(self, body=''):
+        self.body = body
+
+    def getText(self):
+        return self.body
+

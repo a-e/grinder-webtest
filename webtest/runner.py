@@ -720,8 +720,6 @@ class WebtestRunner:
                 log("Looking in response for match to regexp: %s" % regexp)
 
             # Error if the regexp doesn't match part of the response body
-            print(regexp)
-            print(body)
             match = re.search(regexp, body)
             if not match:
                 log("!!!!!! No match for %s" % regexp)
