@@ -33,6 +33,10 @@ class MacroTest (unittest.TestCase):
         tomorrow = M.invoke('today_plus', '1, %Y/%m/%d')
         self.assertTrue(re.match('^\d{4}/\d{2}/\d{2}$', tomorrow))
 
+        # Timestamp
+        seconds = M.invoke('timestamp', '')
+        self.assertTrue(re.match('^\d{10}$', seconds))
+
         # Unknown macro
         self.assertRaises(ValueError, M.invoke, 'bogus', '0')
 

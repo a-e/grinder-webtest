@@ -5,6 +5,7 @@
 
 import random
 import datetime
+import time
 
 def _sample(choices, how_many):
     """Return `how_many` randomly-chosen items from `choices`.
@@ -12,7 +13,11 @@ def _sample(choices, how_many):
     return [random.choice(choices) for x in range(how_many)]
 
 class Macro:
-    """Defines functions that can be invoked from a webtest.
+    """Functions that can be invoked from a webtest.
+
+    Macro functions each accept a string argument, and return a string.
+    If a macro needs to accept several arguments, they should be packed
+    into a string and separated with commas.
     """
     def __init__(self):
         pass
@@ -25,7 +30,7 @@ class Macro:
         except AttributeError:
             raise ValueError("Macro function '%s' is undefined")
         else:
-            return func(args)
+            return str(func(args))
 
     def random_digits(self, length):
         """Generate a random string of digits of the given length.
@@ -57,6 +62,9 @@ class Macro:
         days, format = [arg.strip() for arg in days_and_format.split(',')]
         return (datetime.date.today() + datetime.timedelta(int(days))).strftime(format)
 
-    #raise NameError("Unknown macro: %s" % macro_name)
+    def timestamp(self, arg):
+        """Return a timestamp (number of seconds since the epoch).
+        """
+        return str(int(time.time()))
 
 
