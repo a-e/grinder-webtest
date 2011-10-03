@@ -14,7 +14,7 @@ data_dir = os.path.join(os.path.dirname(__file__), 'data')
 def setup():
     """Package-level setup.
     """
-    # Append to sys.path in case csvsee isn't installed
+    # In case it's not installed systemwide
     sys.path.append(os.path.abspath('..'))
 
 
