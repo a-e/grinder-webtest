@@ -113,12 +113,20 @@ class TestWebtestRunner (unittest.TestCase):
         self.assertEqual(expanded, 'Userid: 1234')
         self.assertEqual(ev('Userid: {UID}'), 'Userid: 1234')
 
-        # TODO: Macro eval, macro assignment, custom macro, escaped braces
+        # Escaped braces
+        self.assertEqual(ev('Literal \{braces\}'),
+                            'Literal \{braces\}')
+        self.assertEqual(ev('Literal \{braces with {USERNAME} inside\}'),
+                            'Literal \{braces with wapcaplet inside\}')
 
         # Exception when variable is not initialized
         self.assertRaises(NameError, ev, '{BOGUS}')
-        # Exception for bad expression
-        self.assertRaises(SyntaxError, ev, '{lowercase_var}')
+        # Exceptions for syntax errors
+        self.assertRaises(SyntaxError, ev, '{server}')
+        self.assertRaises(SyntaxError, ev, '{{SERVER}}')
+        self.assertRaises(SyntaxError, ev, '{ SERVER }')
+
+        # TODO: Macro eval, macro assignment, custom macro
 
 
     def test_eval_capture(self):

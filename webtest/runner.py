@@ -251,7 +251,6 @@ interrupted).
 # Everything in this script should be compatible with Jython 2.2.1.
 
 import random
-import datetime
 
 # Import the webtest parser
 import parser
@@ -385,7 +384,7 @@ class WebtestRunner:
                              after_set=None,
                              sequence='sequential',
                              think_time=500,
-
+                             scenario_think_time=500,
                              verbosity='quiet',
                              macro_class=macro.Macro):
         """Set attributes that affect all `WebtestRunner` instances.
@@ -424,6 +423,9 @@ class WebtestRunner:
 
         ``think_time``
             Time in milliseconds to sleep between each request.
+
+        ``scenario_think_time``
+            Time in milliseconds to sleep between each scenario.
 
         ``verbosity``
             How chatty to be when logging. May be:
@@ -474,6 +476,7 @@ class WebtestRunner:
         cls.after_set = after_set
         cls.sequence = sequence
         cls.think_time = think_time
+        cls.scenario_think_time = scenario_think_time
         cls.verbosity = verbosity
         cls.macro_class = macro_class
 
@@ -577,7 +580,7 @@ class WebtestRunner:
         # macro(args)
         re_macro = re.compile('([_a-z]+)\(([^)]*)\)')
         # VAR_NAME
-        re_var = re.compile('([_A-Z0-9]+)')
+        re_var = re.compile('^([_A-Z0-9]+)$')
 
         macro = WebtestRunner.macro_class()
 
@@ -818,8 +821,11 @@ class WebtestRunner:
                     if response.getStatusCode() >= 400:
                         grinder.statistics.forLastTest.success = False
 
-                    # Sleep
+                    # Sleep between requests
                     grinder.sleep(WebtestRunner.think_time)
+
+            # Sleep between webtest scenarios
+            grinder.sleep(WebtestRunner.scenario_think_time)
 
         # If problems occurred, report an error
         except CaptureFailed:
@@ -828,7 +834,8 @@ class WebtestRunner:
 
     def __call__(self):
         """Execute all requests according to the class attribute ``sequence``,
-        waiting ``think_time`` between each request.
+        waiting ``think_time`` between requests, and ``scenario_think_time``
+        between scenarios.
         """
         # Determine which sequencing to use
         sequence = WebtestRunner.sequence
@@ -870,6 +877,7 @@ def get_test_runner(test_sets,
                     after_set=None,
                     sequence='sequential',
                     think_time=500,
+                    scenario_think_time=500,
                     verbosity='quiet',
                     variables={},
                     macro_class=macro.Macro):
@@ -885,8 +893,16 @@ def get_test_runner(test_sets,
     See `WebtestRunner.set_class_attributes` for documentation on the other
     parameters.
     """
-    WebtestRunner.set_class_attributes(test_sets,
-        before_set, after_set, sequence, think_time, verbosity, macro_class)
+    kwargs = {
+        'before_set': before_set,
+        'after_set': after_set,
+        'sequence': sequence,
+        'think_time': think_time,
+        'scenario_think_time': scenario_think_time,
+        'verbosity': verbosity,
+        'macro_class': macro_class,
+    }
+    WebtestRunner.set_class_attributes(test_sets, **kwargs)
 
     # Define the actual TestRunner wrapper class. This allows us to delay
     # instantiation of the class until the Grinder threads run, while still
