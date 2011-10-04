@@ -161,25 +161,96 @@ class TestWebtestRunner (unittest.TestCase):
         # TODO: Macro eval, macro assignment, custom macro
 
 
-    def test_eval_capture(self):
-        """Capture expressions in webtest requests are correctly evaluated.
+class TestWebtestRunnerEvalCapture (unittest.TestCase):
+    def setUp(self):
+        # Dummy response to test capture evaluation
+        self.response = stub.Response(
+            """<?xml version="1.0" encoding="utf-8"?>
+            <SessionData>
+            <SID>314159265</SID>
+            <FOO>112233</FOO>
+            </SessionData>
+            """
+        )
+
+    def test_eval_capture_single_parenthesized(self):
+        """eval_capture works with a single parenthesized capture expression.
         """
         webtest_file = os.path.join(data_dir, 'captures.webtest')
+        webtest_test = runner.TestSet(webtest_file)
+
+        tr = runner.get_test_runner([webtest_test])()
+        req = parser.Webtest(webtest_file).requests[0]
+
+        captured = tr.eval_capture(req, self.response)
+        self.assertEqual(captured, 1)
+        self.assertEqual(tr.variables, {'SID_CONTENT': '314159265'})
+
+
+    def test_eval_capture_single_unparenthesized(self):
+        """eval_capture works with a single unparenthesized capture expression.
+        """
+        webtest_file = os.path.join(data_dir, 'captures.webtest')
+        webtest_test = runner.TestSet(webtest_file)
+
+        tr = runner.get_test_runner([webtest_test])()
+        req = parser.Webtest(webtest_file).requests[1]
+
+        captured = tr.eval_capture(req, self.response)
+        self.assertEqual(captured, 1)
+        self.assertEqual(tr.variables, {'SID_ELEMENT': '<SID>314159265</SID>'})
+
+
+    def test_eval_capture_multiple_parenthesized(self):
+        """eval_capture works with multiple parenthesized capture expressions.
+        """
+        webtest_file = os.path.join(data_dir, 'captures.webtest')
+        webtest_test = runner.TestSet(webtest_file)
+
+        tr = runner.get_test_runner([webtest_test])()
+        req = parser.Webtest(webtest_file).requests[2]
+
+        captured = tr.eval_capture(req, self.response)
+        self.assertEqual(captured, 2)
+        self.assertEqual(tr.variables, {
+            'SID_CONTENT': '314159265', 'FOO_CONTENT': '112233'})
+
+
+    def test_eval_capture_multiple_unparenthesized(self):
+        """eval_capture works with multiple unparenthesized capture expressions.
+        """
+        webtest_file = os.path.join(data_dir, 'captures.webtest')
+        webtest_test = runner.TestSet(webtest_file)
+
+        tr = runner.get_test_runner([webtest_test])()
+        req = parser.Webtest(webtest_file).requests[3]
+
+        captured = tr.eval_capture(req, self.response)
+        self.assertEqual(captured, 2)
+        self.assertEqual(tr.variables, {
+            'SID_ELEMENT': '<SID>314159265</SID>', 'FOO_ELEMENT': '<FOO>112233</FOO>'})
+
+
+    def test_eval_capture_empty(self):
+        """eval_capture does nothing when there are no capture expressions.
+        """
+        webtest_file = os.path.join(data_dir, 'login.webtest')
         webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner instance
         tr = runner.get_test_runner([webtest_test])()
 
         # Get the login POST request from captures.webtest
-        request = parser.Webtest(webtest_file).requests[1]
+        request = parser.Webtest(webtest_file).requests[0]
 
         # Construct a dummy response
         response = stub.Response(
             """<?xml version="1.0" encoding="utf-8"?>
             <SessionData><SID>314159265</SID></SessionData>
             """)
-        tr.eval_capture(request, response)
-        self.assertEqual(tr.variables, {'SESSION_ID': '314159265'})
+        captured = tr.eval_capture(request, response)
+        self.assertEqual(captured, 0)
+        self.assertEqual(tr.variables, {})
 
 
     def test_eval_capture_syntax_error(self):

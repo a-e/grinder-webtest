@@ -630,7 +630,8 @@ class WebtestRunner:
 
     def eval_capture(self, request, response):
         """Evaluate any ``Capture`` expressions in the given request, and set
-        variables to matching text in the given response.
+        variables to matching text in the given response. Return the number of
+        capture expressions that were successfully evaluated.
 
         In order for this to work, you should include a ``Capture`` element
         inside the ``Request`` element whose response you want to capture. Each
@@ -693,9 +694,12 @@ class WebtestRunner:
 
         before matching in the response body.
         """
+        # Number of successful captures
+        captured = 0
+
         # If capture expression is empty, there's nothing to do
-        if request.capture.strip() == '':
-            return
+        if not request.captures():
+            return captured
 
         # Import re here to avoid threading problems
         # See: http://osdir.com/ml/java.grinder.user/2003-07/msg00030.html
@@ -737,9 +741,12 @@ class WebtestRunner:
             # or the entire match if there was no parenthesized expression
             else:
                 value = match.group(0)
+            captured += 1
             if WebtestRunner.verbosity in ('debug', 'info'):
                 log("Captured %s = %s" % (name, value))
             self.variables[name] = value
+
+        return captured
 
 
     def execute(self, test, wrapper, request):

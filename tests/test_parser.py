@@ -10,16 +10,16 @@ import unittest
 
 class TestParser (unittest.TestCase):
     def test_well_formed(self):
-        """Test the `Webtest` class with a well-formed .webtest file.
+        """A well-formed webtest file is correctly parsed.
         """
         # Test a valid webtest file with three requests
-        webtest_file = os.path.join(data_dir, 'captures.webtest')
+        webtest_file = os.path.join(data_dir, 'login.webtest')
         w = parser.Webtest(webtest_file)
 
         # Request info is correct
         self.assertEqual(w.filename, webtest_file)
         self.assertEqual(len(w.requests), 3)
-        self.assertTrue('captures.webtest' in str(w))
+        self.assertTrue('login.webtest' in str(w))
         self.assertTrue('Login to the application' in str(w))
 
         # Data in all three requests was correctly parsed
@@ -32,7 +32,6 @@ class TestParser (unittest.TestCase):
             (u'Content-Type', u'text/xml; charset=utf-8'),
         ])
         self.assertEqual(first.parameters, [])
-        self.assertEqual(first.captures(), [])
         self.assertTrue(str(first).startswith("Load the application homepage"))
 
         # Second request
@@ -46,9 +45,6 @@ class TestParser (unittest.TestCase):
             (u'username', u'{USERNAME}'),
             (u'password', u'{PASSWORD}'),
         ])
-        self.assertEqual(second.captures(), [
-            u'{SESSION_ID = <SID>([^<]+)</SID>}',
-        ])
         self.assertEqual(second.body.strip(), '')
         self.assertTrue(str(second).startswith("Login to the application"))
 
@@ -60,9 +56,38 @@ class TestParser (unittest.TestCase):
             (u'Content-Type', u'text/xml; charset=utf-8'),
         ])
         self.assertEqual(third.parameters, [])
-        self.assertEqual(third.captures(), [])
         self.assertEqual(third.body.strip(), u'Hello world')
         self.assertTrue(str(third).startswith("A post with body text"))
+
+
+    def test_captures(self):
+        """Single-capture expressions in a .webtest file are parsed correctly.
+        """
+        webtest_file = os.path.join(data_dir, 'captures.webtest')
+        w = parser.Webtest(webtest_file)
+        first, second, third, fourth = w.requests
+
+        self.assertEqual(first.description, 'Single parenthesized')
+        self.assertEqual(first.captures(), [
+            u'{SID_CONTENT = <SID>([^<]+)</SID>}',
+        ])
+
+        self.assertEqual(second.description, 'Single unparenthesized')
+        self.assertEqual(second.captures(), [
+            u'{SID_ELEMENT = <SID>[^<]+</SID>}',
+        ])
+
+        self.assertEqual(third.description, 'Multiple parenthesized')
+        self.assertEqual(third.captures(), [
+            u'{SID_CONTENT = <SID>([^<]+)</SID>}',
+            u'{FOO_CONTENT = <FOO>([^<]+)</FOO>}',
+        ])
+
+        self.assertEqual(fourth.description, 'Multiple unparenthesized')
+        self.assertEqual(fourth.captures(), [
+            u'{SID_ELEMENT = <SID>[^<]+</SID>}',
+            u'{FOO_ELEMENT = <FOO>[^<]+</FOO>}',
+        ])
 
 
     def test_malformed(self):

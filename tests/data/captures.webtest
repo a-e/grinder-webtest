@@ -2,34 +2,49 @@
 <TestCase>
   <Items>
     <Request Method="GET" Url="http://{SERVER}/">
-      <Description>Load the application homepage</Description>
+      <Description>Single parenthesized</Description>
       <Headers>
         <Header Name="Content-Type" Value="text/xml; charset=utf-8" />
       </Headers>
+      <Capture>
+        <![CDATA[{SID_CONTENT = <SID>([^<]+)</SID>}]]>
+      </Capture>
     </Request>
 
-    <Request Method="POST" Url="http://{SERVER}/login">
-      <Description>Login to the application</Description>
+    <Request Method="GET" Url="http://{SERVER}/">
+      <Description>Single unparenthesized</Description>
       <Headers>
         <Header Name="Content-Type" Value="text/xml; charset=utf-8" />
       </Headers>
-      <FormPostHttpBody>
-        <FormPostParameter Name="username" Value="{USERNAME}" UrlEncode="True" />
-        <FormPostParameter Name="password" Value="{PASSWORD}" UrlEncode="True" />
-      </FormPostHttpBody>
-      <Capture><![CDATA[{SESSION_ID = <SID>([^<]+)</SID>}]]></Capture>
+      <Capture>
+        <![CDATA[{SID_ELEMENT = <SID>[^<]+</SID>}]]>
+      </Capture>
     </Request>
 
-    <Request Method="POST" Url="http://{SERVER}/hello">
-      <Description>A post with body text</Description>
+    <Request Method="GET" Url="http://{SERVER}/">
+      <Description>Multiple parenthesized</Description>
       <Headers>
         <Header Name="Content-Type" Value="text/xml; charset=utf-8" />
       </Headers>
-      <FormPostHttpBody>
-      </FormPostHttpBody>
-      <StringHttpBody ContentType="text/xml; charset=utf-8">
-        Hello world
-      </StringHttpBody>
+      <Capture>
+        <![CDATA[
+          {SID_CONTENT = <SID>([^<]+)</SID>}
+          {FOO_CONTENT = <FOO>([^<]+)</FOO>}
+        ]]>
+      </Capture>
+    </Request>
+
+    <Request Method="GET" Url="http://{SERVER}/">
+      <Description>Multiple unparenthesized</Description>
+      <Headers>
+        <Header Name="Content-Type" Value="text/xml; charset=utf-8" />
+      </Headers>
+      <Capture>
+        <![CDATA[
+          {SID_ELEMENT = <SID>[^<]+</SID>}
+          {FOO_ELEMENT = <FOO>[^<]+</FOO>}
+        ]]>
+      </Capture>
     </Request>
   </Items>
 </TestCase>
