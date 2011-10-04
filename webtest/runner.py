@@ -258,7 +258,7 @@ import macro
 
 # Import the necessary Grinder stuff
 # This is wrapped with exception handling, to allow Sphinx to import this
-# module for documentation purposes
+# module for documentation purposes (and to allow the test suite to run)
 try:
     from net.grinder.script import Test
     from net.grinder.script.Grinder import grinder
@@ -870,6 +870,8 @@ class WebtestRunner:
         else: # assume 'sequential'
             for test_set in WebtestRunner.test_sets:
                 self.run_test_set(test_set)
+
+        return True
 
 
 def get_test_runner(test_sets,

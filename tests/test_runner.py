@@ -4,6 +4,7 @@
 """
 
 import os
+import re
 import unittest
 from . import data_dir
 from webtest import runner
@@ -19,6 +20,7 @@ class TestSetTest (unittest.TestCase):
         self.assertEqual(len(ts.filenames), 1)
         self.assertEqual(ts.filenames, [login_file])
         self.assertEqual(ts.weight, 1.0)
+
 
 class TestWebtestRunner (unittest.TestCase):
     def test_get_test_runner(self):
@@ -64,7 +66,6 @@ class TestWebtestRunner (unittest.TestCase):
     def test_running(self):
         """WebtestRunner can run tests.
         """
-        # FIXME: Need some test assertions in here!
         login_file = os.path.join(data_dir, 'login.webtest')
         login_test = runner.TestSet(login_file)
         my_vars = {
@@ -79,7 +80,27 @@ class TestWebtestRunner (unittest.TestCase):
         runner_instance = test_runner()
 
         # Call the runner to execute tests
-        runner_instance()
+        result = runner_instance()
+        self.assertEqual(result, True)
+
+        # TODO: Test random, thread, weighted
+
+
+    def test_bad_request_method(self):
+        """WebtestRunner raises exception on bad request method.
+        """
+        login_file = os.path.join(data_dir, 'bad_method.webtest')
+        login_test = runner.TestSet(login_file)
+
+        # Get the test runner
+        test_runner = runner.get_test_runner([login_test])
+
+        # Instantiate the test runner
+        runner_instance = test_runner()
+
+        # Calling the runner should raise an exception for
+        # the bad request method
+        self.assertRaises(ValueError, runner_instance)
 
 
     def test_eval_expressions(self):
@@ -93,38 +114,49 @@ class TestWebtestRunner (unittest.TestCase):
         # Get a dummy test runner instance
         tr = runner.get_test_runner([], variables=my_vars)()
         # Shortcut to eval
-        ev = tr.eval_expressions
+        ee = tr.eval_expressions
 
         # Simple variable expansion
-        self.assertEqual(ev('{SERVER}'), 'www.google.com')
-        self.assertEqual(ev('{USERNAME}'), 'wapcaplet')
-        self.assertEqual(ev('{PASSWORD}'), 'f00b4r')
+        self.assertEqual(ee('{SERVER}'), 'www.google.com')
+        self.assertEqual(ee('{USERNAME}'), 'wapcaplet')
+        self.assertEqual(ee('{PASSWORD}'), 'f00b4r')
 
         # Variable expansion with surrounding text
-        self.assertEqual(ev('http://{SERVER}/'), 'http://www.google.com/')
-        self.assertEqual(ev('User="{USERNAME}"'), 'User="wapcaplet"')
-        self.assertEqual(ev('Pass="{PASSWORD}"'), 'Pass="f00b4r"')
+        self.assertEqual(ee('http://{SERVER}/'), 'http://www.google.com/')
+        self.assertEqual(ee('User="{USERNAME}"'), 'User="wapcaplet"')
+        self.assertEqual(ee('Pass="{PASSWORD}"'), 'Pass="f00b4r"')
 
         # Multiple-variable expansion
-        self.assertEqual(ev('User:{USERNAME};Pass:{PASSWORD}'), 'User:wapcaplet;Pass:f00b4r')
+        self.assertEqual(ee('User:{USERNAME};Pass:{PASSWORD}'), 'User:wapcaplet;Pass:f00b4r')
 
         # Variable assignment
-        expanded = ev('Userid: {UID = 1234}')
+        expanded = ee('Userid: {UID = 1234}')
         self.assertEqual(expanded, 'Userid: 1234')
-        self.assertEqual(ev('Userid: {UID}'), 'Userid: 1234')
+        self.assertEqual(ee('Userid: {UID}'), 'Userid: 1234')
+
+        # Macro evaluation
+        expanded = ee('Random: {random_digits(5)}')
+        self.assertTrue(re.match('^Random: \d{5}$', expanded))
+
+        # Macro evaluation and assignment
+        expanded = ee('Random: {DIGITS = random_digits(5)}')
+        match = re.match('^Random: (\d{5})$', expanded)
+        self.assertTrue(match) # Got a 5-digit number
+        # DIGITS alone expands to the previously-expanded value
+        self.assertEqual(ee('{DIGITS}'), match.groups()[0])
 
         # Escaped braces
-        self.assertEqual(ev('Literal \{braces\}'),
+        self.assertEqual(ee('Literal \{braces\}'),
                             'Literal \{braces\}')
-        self.assertEqual(ev('Literal \{braces with {USERNAME} inside\}'),
+        self.assertEqual(ee('Literal \{braces with {USERNAME} inside\}'),
                             'Literal \{braces with wapcaplet inside\}')
 
         # Exception when variable is not initialized
-        self.assertRaises(NameError, ev, '{BOGUS}')
+        self.assertRaises(NameError, ee, '{BOGUS}')
         # Exceptions for syntax errors
-        self.assertRaises(SyntaxError, ev, '{server}')
-        self.assertRaises(SyntaxError, ev, '{{SERVER}}')
-        self.assertRaises(SyntaxError, ev, '{ SERVER }')
+        self.assertRaises(SyntaxError, ee, '{server}')
+        self.assertRaises(SyntaxError, ee, '{{SERVER}}')
+        self.assertRaises(SyntaxError, ee, '{ SERVER }')
 
         # TODO: Macro eval, macro assignment, custom macro
 
@@ -132,14 +164,14 @@ class TestWebtestRunner (unittest.TestCase):
     def test_eval_capture(self):
         """Capture expressions in webtest requests are correctly evaluated.
         """
-        login_file = os.path.join(data_dir, 'login.webtest')
-        login_test = runner.TestSet(login_file)
+        webtest_file = os.path.join(data_dir, 'captures.webtest')
+        webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner instance
-        tr = runner.get_test_runner([login_test])()
+        tr = runner.get_test_runner([webtest_test])()
 
-        # Get the first request from login.webtest
-        request = parser.Webtest(login_file).requests[0]
+        # Get the login POST request from captures.webtest
+        request = parser.Webtest(webtest_file).requests[1]
 
         # Construct a dummy response
         response = stub.Response(
@@ -147,21 +179,20 @@ class TestWebtestRunner (unittest.TestCase):
             <SessionData><SID>314159265</SID></SessionData>
             """)
         tr.eval_capture(request, response)
-        self.assertTrue('SESSION_ID' in tr.variables)
-        self.assertEqual(tr.variables['SESSION_ID'], '314159265')
+        self.assertEqual(tr.variables, {'SESSION_ID': '314159265'})
 
 
     def test_eval_capture_syntax_error(self):
         """eval_capture raises an exception on malformed capture expressions.
         """
-        login_file = os.path.join(data_dir, 'malformed_capture.webtest')
-        login_test = runner.TestSet(login_file)
+        webtest_file = os.path.join(data_dir, 'malformed_capture.webtest')
+        webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner instance
-        tr = runner.get_test_runner([login_test])()
+        tr = runner.get_test_runner([webtest_test])()
 
-        # Get the first request from login.webtest
-        request = parser.Webtest(login_file).requests[0]
+        # Get the first request from captures.webtest
+        request = parser.Webtest(webtest_file).requests[0]
 
         # Construct a dummy response
         response = stub.Response(
@@ -175,14 +206,14 @@ class TestWebtestRunner (unittest.TestCase):
     def test_eval_capture_not_found(self):
         """eval_capture raises an exception when a capture expression is not matched
         """
-        login_file = os.path.join(data_dir, 'login.webtest')
-        login_test = runner.TestSet(login_file)
+        webtest_file = os.path.join(data_dir, 'captures.webtest')
+        webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner instance
-        tr = runner.get_test_runner([login_test])()
+        tr = runner.get_test_runner([webtest_test])()
 
-        # Get the first request from login.webtest
-        request = parser.Webtest(login_file).requests[0]
+        # Get the first request from captures.webtest
+        request = parser.Webtest(webtest_file).requests[1]
 
         # Construct a dummy response
         response = stub.Response(
@@ -191,4 +222,5 @@ class TestWebtestRunner (unittest.TestCase):
             """)
         # eval_capture raises an exception
         self.assertRaises(runner.CaptureFailed, tr.eval_capture, request, response)
+
 

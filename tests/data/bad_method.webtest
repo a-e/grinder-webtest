@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestCase>
+  <Items>
+    <!-- PUT method is not understood by grinder-webtest -->
+    <Request Method="PUT" Url="http://www.example.com/">
+      <Description>Load the application homepage</Description>
+      <Headers>
+        <Header Name="Content-Type" Value="text/xml; charset=utf-8" />
+      </Headers>
+    </Request>
+  </Items>
+</TestCase>
+

@@ -22,9 +22,11 @@ class Stub (object):
         return 'Stub'
 
 grinder = Stub()
-log = Stub()
 NVPair = Stub()
 HTTPRequest = Stub()
+
+def log(message):
+    print(message)
 
 class Test:
     def __init__(self, number, description):

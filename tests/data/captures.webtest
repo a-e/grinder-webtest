@@ -17,6 +17,7 @@
         <FormPostParameter Name="username" Value="{USERNAME}" UrlEncode="True" />
         <FormPostParameter Name="password" Value="{PASSWORD}" UrlEncode="True" />
       </FormPostHttpBody>
+      <Capture><![CDATA[{SESSION_ID = <SID>([^<]+)</SID>}]]></Capture>
     </Request>
 
     <Request Method="POST" Url="http://{SERVER}/hello">
