@@ -318,6 +318,9 @@ class CaptureFailed (RuntimeError):
     """Raised when a capture expression is not matched."""
     pass
 
+class BadRequestMethod (RuntimeError):
+    """Raised when a bad request method is used."""
+    pass
 
 class WebtestRunner:
     """A base class for ``TestRunner`` instances that will run `TestSet`\s.
@@ -785,7 +788,7 @@ class WebtestRunner:
         else:
             message = "Unknown HTTP method: '%s'" % request.method
             message += " in request defined on line %d" % request.line_number
-            raise ValueError(message)
+            raise BadRequestMethod(message)
 
         if WebtestRunner.verbosity == 'debug':
             # Log the response
@@ -814,6 +817,8 @@ class WebtestRunner:
     def run_test_set(self, test_set):
         """Run all ``.webtest`` files in the given `TestSet`.
         """
+        grinder.statistics.forLastTest.success = True
+
         # TODO: Reduce the amount of stuff inside this try block
         try:
             for filename in test_set.filenames:
@@ -838,6 +843,11 @@ class WebtestRunner:
         # If problems occurred, report an error
         except CaptureFailed:
             grinder.statistics.forLastTest.success = False
+            raise
+
+        except BadRequestMethod:
+            grinder.statistics.forLastTest.success = False
+            raise
 
 
     def __call__(self):

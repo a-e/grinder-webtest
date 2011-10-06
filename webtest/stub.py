@@ -21,12 +21,18 @@ class Stub (object):
     def __str__(self):
         return 'Stub'
 
-grinder = Stub()
-NVPair = Stub()
-HTTPRequest = Stub()
-
 def log(message):
     print(message)
+
+class Wrapper:
+    def __init__(self):
+        pass
+
+    def GET(self, *args):
+        return Response()
+
+    def POST(self, *args):
+        return Response()
 
 class Test:
     def __init__(self, number, description):
@@ -37,7 +43,7 @@ class Test:
         return self.number
 
     def wrap(self, *args):
-        return Stub()
+        return Wrapper()
 
 class Response:
     def __init__(self, body=''):
@@ -45,4 +51,32 @@ class Response:
 
     def getText(self):
         return self.body
+
+    def getStatusCode(self):
+        return 200
+
+class StatisticsForTest:
+    def __init__(self):
+        self.success = True
+
+class Statistics:
+    def __init__(self):
+        self.forLastTest = StatisticsForTest()
+        self.delayReports = False
+
+class Grinder:
+    __shared_state = {}
+    def __init__(self):
+        self.__dict__ = self.__shared_state
+        self.statistics = Statistics()
+
+    def sleep(self, *args):
+        pass
+
+    def getThreadNumber(self, *args):
+        return 0
+
+grinder = Grinder()
+NVPair = Stub()
+HTTPRequest = Stub()
 

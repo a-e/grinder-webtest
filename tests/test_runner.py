@@ -80,29 +80,32 @@ class TestWebtestRunner (unittest.TestCase):
 
         # Instantiate the test runner
         runner_instance = test_runner()
+        self.assertEqual(stub.grinder.statistics.delayReports, True)
 
         # Call the runner to execute tests
         result = runner_instance()
         self.assertEqual(result, True)
+        self.assertEqual(stub.grinder.statistics.forLastTest.success, True)
 
         # TODO: Test random, thread, weighted
 
 
-    def test_bad_request_method(self):
+    def test_runner_bad_request_method(self):
         """WebtestRunner raises exception on bad request method.
         """
-        login_file = os.path.join(data_dir, 'bad_method.webtest')
-        login_test = runner.TestSet(login_file)
+        webtest_file = os.path.join(data_dir, 'bad_method.webtest')
+        webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner
-        test_runner = runner.get_test_runner([login_test], verbosity='debug')
+        test_runner = runner.get_test_runner([webtest_test], verbosity='debug')
 
         # Instantiate the test runner
         runner_instance = test_runner()
 
         # Calling the runner should raise an exception for
         # the bad request method
-        self.assertRaises(ValueError, runner_instance)
+        self.assertRaises(runner.BadRequestMethod, runner_instance)
+        self.assertEqual(stub.grinder.statistics.forLastTest.success, False)
 
 
     def test_eval_expressions(self):
