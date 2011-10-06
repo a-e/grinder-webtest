@@ -60,6 +60,24 @@ class TestParser (unittest.TestCase):
         self.assertTrue(str(third).startswith("A post with body text"))
 
 
+    def test_deferred_load(self):
+        """Webtest can be initialized separately from loading a .webtest file.
+        """
+        # Empty Webtest
+        w = parser.Webtest()
+        self.assertEqual(w.filename, '')
+        self.assertEqual(len(w.requests), 0)
+        self.assertEqual(str(w), 'Empty Webtest')
+
+        # Load a file
+        webtest_file = os.path.join(data_dir, 'login.webtest')
+        w.load(webtest_file)
+        self.assertEqual(w.filename, webtest_file)
+        self.assertEqual(len(w.requests), 3)
+        self.assertTrue('login.webtest' in str(w))
+        self.assertTrue('Login to the application' in str(w))
+
+
     def test_captures(self):
         """Single-capture expressions in a .webtest file are parsed correctly.
         """

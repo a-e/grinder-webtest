@@ -27,7 +27,7 @@ Alternatively, you can delay parsing until later::
 
     >>> my_test = Webtest()
     ...
-    >>> my_test.parse('my_test.webtest')
+    >>> my_test.load('my_test.webtest')
 
 After parsing, the `Webtest` object will contain a list of `Request` objects.
 You can print all requests in summarized form::
@@ -73,7 +73,6 @@ general-purpose parsing of ``.webtest`` files.
 
 # Everything in this script should be compatible with Jython 2.2.1.
 
-import sys
 from xml import sax
 from urlparse import urlparse
 
@@ -296,9 +295,10 @@ class Webtest:
     """Webtest XML file parser.
     """
     def __init__(self, filename=''):
-        """Get requests from the given ``.webtest`` XML file.
-        After calling this, the ``requests`` attribute will have a
-        list of all requests found in the given ``.webtest`` file.
+        """Get requests from the given ``.webtest`` XML file. After calling
+        this, the ``requests`` attribute will have a list of all requests found
+        in the given ``.webtest`` file. If ``filename`` is not given, the
+        ``Webtest`` will be empty until you call `load`.
         """
         self.filename = filename
         self.requests = []
@@ -306,14 +306,14 @@ class Webtest:
         self._handler = WebtestHandler()
         self.saxparser = sax.make_parser()
         self.saxparser.setContentHandler(self._handler)
-        # Parse the file, if given
+        # Load the file, if given
         if filename:
-            self.parse(filename)
+            self.load(filename)
 
 
-    def parse(self, filename):
-        """Parse the given ``.webtest`` XML file, and store the
-        list of requests found in it.
+    def load(self, filename):
+        """Load and parse the given ``.webtest`` XML file, and store the list
+        of requests found in it.
         """
         self.filename = filename
         # Parse the given filename
@@ -326,12 +326,17 @@ class Webtest:
         # Store a reference to the list of requests
         self.requests = self._handler.requests
 
+    # For backwards compatibility
+    parse = load
 
     def __str__(self):
         """Return the Webtest formatted as a human-readable string.
         """
-        result = 'Webtest: %s\n\n' % self.filename
-        result += '\n\n'.join([str(req) for req in self.requests])
+        if self.filename:
+            result = 'Webtest: %s\n\n' % self.filename
+            result += '\n\n'.join([str(req) for req in self.requests])
+        else:
+            result = 'Empty Webtest'
         return result
 
 

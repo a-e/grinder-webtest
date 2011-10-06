@@ -544,8 +544,8 @@ class WebtestRunner:
                 Expand to the result of ``macro_name(args)``
             ``{MY_VAR = macro_name(args)}``
                 Assign ``MY_VAR`` the result of calling ``macro_name(args)``,
-                and also expand to the resulting value. See the `macro`
-                method for available macros.
+                and also expand to the resulting value. See the `webtest.macro`
+                module for more information.
 
         Any given value that does not match any of these forms is simply
         returned as-is. If you need to use literal ``{`` or ``}`` characters in

@@ -34,6 +34,7 @@ class TestWebtestRunner (unittest.TestCase):
             [login_test],
             before_set=login_test,
             after_set=login_test,
+            verbosity='debug',
             sequence='weighted')
         self.assertEqual(type(test_runner), type(runner.WebtestRunner))
         self.assertEqual(len(test_runner.test_sets), 1)
@@ -74,7 +75,8 @@ class TestWebtestRunner (unittest.TestCase):
             'PASSWORD': 'f00b4r',
         }
         # Get the test runner
-        test_runner = runner.get_test_runner([login_test], variables=my_vars)
+        test_runner = runner.get_test_runner(
+            [login_test], verbosity='debug', variables=my_vars)
 
         # Instantiate the test runner
         runner_instance = test_runner()
@@ -93,7 +95,7 @@ class TestWebtestRunner (unittest.TestCase):
         login_test = runner.TestSet(login_file)
 
         # Get the test runner
-        test_runner = runner.get_test_runner([login_test])
+        test_runner = runner.get_test_runner([login_test], verbosity='debug')
 
         # Instantiate the test runner
         runner_instance = test_runner()
@@ -179,7 +181,7 @@ class TestWebtestRunnerEvalCapture (unittest.TestCase):
         webtest_file = os.path.join(data_dir, 'captures.webtest')
         webtest_test = runner.TestSet(webtest_file)
 
-        tr = runner.get_test_runner([webtest_test])()
+        tr = runner.get_test_runner([webtest_test], verbosity='debug')()
         req = parser.Webtest(webtest_file).requests[0]
 
         captured = tr.eval_capture(req, self.response)
@@ -193,7 +195,7 @@ class TestWebtestRunnerEvalCapture (unittest.TestCase):
         webtest_file = os.path.join(data_dir, 'captures.webtest')
         webtest_test = runner.TestSet(webtest_file)
 
-        tr = runner.get_test_runner([webtest_test])()
+        tr = runner.get_test_runner([webtest_test], verbosity='debug')()
         req = parser.Webtest(webtest_file).requests[1]
 
         captured = tr.eval_capture(req, self.response)
@@ -207,7 +209,7 @@ class TestWebtestRunnerEvalCapture (unittest.TestCase):
         webtest_file = os.path.join(data_dir, 'captures.webtest')
         webtest_test = runner.TestSet(webtest_file)
 
-        tr = runner.get_test_runner([webtest_test])()
+        tr = runner.get_test_runner([webtest_test], verbosity='debug')()
         req = parser.Webtest(webtest_file).requests[2]
 
         captured = tr.eval_capture(req, self.response)
@@ -222,7 +224,7 @@ class TestWebtestRunnerEvalCapture (unittest.TestCase):
         webtest_file = os.path.join(data_dir, 'captures.webtest')
         webtest_test = runner.TestSet(webtest_file)
 
-        tr = runner.get_test_runner([webtest_test])()
+        tr = runner.get_test_runner([webtest_test], verbosity='debug')()
         req = parser.Webtest(webtest_file).requests[3]
 
         captured = tr.eval_capture(req, self.response)
@@ -238,7 +240,7 @@ class TestWebtestRunnerEvalCapture (unittest.TestCase):
         webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner instance
-        tr = runner.get_test_runner([webtest_test])()
+        tr = runner.get_test_runner([webtest_test], verbosity='debug')()
 
         # Get the login POST request from captures.webtest
         request = parser.Webtest(webtest_file).requests[0]
@@ -260,7 +262,7 @@ class TestWebtestRunnerEvalCapture (unittest.TestCase):
         webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner instance
-        tr = runner.get_test_runner([webtest_test])()
+        tr = runner.get_test_runner([webtest_test], verbosity='debug')()
 
         # Get the first request from captures.webtest
         request = parser.Webtest(webtest_file).requests[0]
@@ -281,7 +283,7 @@ class TestWebtestRunnerEvalCapture (unittest.TestCase):
         webtest_test = runner.TestSet(webtest_file)
 
         # Get the test runner instance
-        tr = runner.get_test_runner([webtest_test])()
+        tr = runner.get_test_runner([webtest_test], verbosity='debug')()
 
         # Get the first request from captures.webtest
         request = parser.Webtest(webtest_file).requests[1]

@@ -40,3 +40,6 @@ class MacroTest (unittest.TestCase):
         # Unknown macro
         self.assertRaises(ValueError, M.invoke, 'bogus', '0')
 
+        # Cannot invoke 'invoke'
+        self.assertRaises(ValueError, M.invoke, 'invoke', '0')
+
