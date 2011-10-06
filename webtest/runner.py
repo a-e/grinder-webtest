@@ -291,6 +291,15 @@ else:
     ]
 
 
+class CaptureFailed (RuntimeError):
+    """Raised when a capture expression is not matched."""
+    pass
+
+class BadRequestMethod (RuntimeError):
+    """Raised when a bad request method is used."""
+    pass
+
+
 class TestSet:
     """A collection of ``.webtest`` files that are executed sequentially, with
     an implied dependency between them.
@@ -314,13 +323,105 @@ class TestSet:
         self.weight = kwargs.get('weight', 1.0)
 
 
-class CaptureFailed (RuntimeError):
-    """Raised when a capture expression is not matched."""
-    pass
+def get_test_runner(test_sets,
+                    variables={},
+                    before_set=None,
+                    after_set=None,
+                    sequence='sequential',
+                    think_time=500,
+                    scenario_think_time=500,
+                    verbosity='quiet',
+                    macro_class=macro.Macro):
+    """Return a `TestRunner` base class that runs ``.webtest`` files in the
+    given list of `TestSet`\s.
 
-class BadRequestMethod (RuntimeError):
-    """Raised when a bad request method is used."""
-    pass
+        ``variables``
+            Default variables for all `TestRunner` instances. Each
+            `TestRunner` instance will get their own copy of these, but
+            passing them here lets you define defaults for commonly-used
+            variables like server name, username, or password.
+
+        ``test_sets``
+            A list of TestSets, where each `TestSet` contains one or more
+            webtests that must be run sequentially. Each `TestSet`
+            will run in a single TestRunner instance, ensuring
+            that they can share variable values.
+
+        ``before_set``
+            A `TestSet` that should be run when the `TestRunner` is
+            initialized. Use this if all webtests need to perform the same
+            initial steps, such as logging in.
+
+        ``after_set``
+            A `TestSet` that should be run when the `TestRunner` is destroyed.
+            Use this if all webtests need to perform the same final steps, such
+            as logging out.
+
+        ``sequence``
+            How to run the given test sets. Allowed values:
+
+            'sequential'
+                Each thread runs all TestSets in order.
+            'random'
+                Each thread runs a random TestSet for each ``__call__``.
+            'weighted'
+                Each thread runs a random TestSet, with those having a
+                larger ``weight`` being run more often.
+            'thread'
+                Thread 0 runs the first TestSet, Thread 1 runs the next, and so
+                on. If there are fewer threads than TestSets, some TestSets
+                will not be run. If there are more threads than TestSets, the
+                extra threads start over at 0 again.
+
+        ``think_time``
+            Time in milliseconds to sleep between each request.
+
+        ``scenario_think_time``
+            Time in milliseconds to sleep between each scenario.
+
+        ``verbosity``
+            How chatty to be when logging. May be:
+
+            'debug'
+                Everything, including response body
+            'info'
+                Basic info, including request parameters and evaluated
+                expressions
+            'quiet'
+                Minimal info, including .webtest filename and test names
+            'error'
+                Only log errors, nothing else
+
+        ``macro_class``
+            The class (not the instance) where macro functions are defined. If
+            ``None``, the `webtest.macro.Macro` class is used; pass a derived
+            class if you want to define your own macros.
+
+    """
+    kwargs = {
+        'before_set': before_set,
+        'after_set': after_set,
+        'sequence': sequence,
+        'think_time': think_time,
+        'scenario_think_time': scenario_think_time,
+        'verbosity': verbosity,
+        'macro_class': macro_class,
+    }
+    WebtestRunner.set_class_attributes(test_sets, **kwargs)
+
+    # Define the actual TestRunner wrapper class. This allows us to delay
+    # instantiation of the class until the Grinder threads run, while still
+    # populate the instance with the given variables in the __init__ method.
+    class TestRunner (WebtestRunner):
+        def __init__(self):
+            """Create a TestRunner instance initialized with the given
+            variables.
+            """
+            WebtestRunner.__init__(self, **variables)
+
+    # Return the class (NOT an instance!)
+    return TestRunner
+
 
 class WebtestRunner:
     """A base class for ``TestRunner`` instances that will run `TestSet`\s.
@@ -390,65 +491,10 @@ class WebtestRunner:
                              think_time=500,
                              scenario_think_time=500,
                              verbosity='quiet',
-                             macro_class=macro.Macro):
+                             macro_class=None):
         """Set attributes that affect all `WebtestRunner` instances.
 
-        ``test_sets``
-            A list of TestSets, where each `TestSet` contains one or more
-            webtests that must be run sequentially. Each `TestSet`
-            will run in a single TestRunner instance, ensuring
-            that they can share variable values.
-
-        ``before_set``
-            A `TestSet` that should be run when the `TestRunner` is
-            initialized. Use this if all webtests need to perform the same
-            initial steps, such as logging in.
-
-        ``after_set``
-            A `TestSet` that should be run when the `TestRunner` is destroyed.
-            Use this if all webtests need to perform the same final steps, such
-            as logging out.
-
-        ``sequence``
-            How to run the given test sets. Allowed values:
-
-            'sequential'
-                Each thread runs all TestSets in order.
-            'random'
-                Each thread runs a random TestSet for each ``__call__``.
-            'weighted'
-                Each thread runs a random TestSet, with those having a
-                larger ``weight`` being run more often.
-            'thread'
-                Thread 0 runs the first TestSet, Thread 1 runs the next, and so
-                on. If there are fewer threads than TestSets, some TestSets
-                will not be run. If there are more threads than TestSets, the
-                extra threads start over at 0 again.
-
-        ``think_time``
-            Time in milliseconds to sleep between each request.
-
-        ``scenario_think_time``
-            Time in milliseconds to sleep between each scenario.
-
-        ``verbosity``
-            How chatty to be when logging. May be:
-
-            'debug'
-                Everything, including response body
-            'info'
-                Basic info, including request parameters and evaluated
-                expressions
-            'quiet'
-                Minimal info, including .webtest filename and test names
-            'error'
-                Only log errors, nothing else
-
-        ``macro_class``
-            The class where macro functions are defined. Uses the standard
-            `~webtest.macro.Macro` class by default; pass a derived class
-            if you want to define your own macros.
-
+        See `get_test_runner` for what the parameters mean.
         """
         # Type-checking
         # Ensure that test_sets is a list
@@ -470,9 +516,11 @@ class WebtestRunner:
         # Ensure that verbosity is valid
         if verbosity not in ('debug', 'info', 'quiet', 'error'):
             raise ValueError("verbosity must be 'debug', 'info', 'quiet', or 'error'.")
-        # Ensure that macro_class is a class, and is derived from macro.Macro
-        if not (type(macro_class) == type(macro.Macro) and issubclass(macro_class, macro.Macro)):
-            raise ValueError("macro_class must be a subclass of webtest.macro.Macro")
+        # If macro_class is provided, ensure that it's derived from macro.Macro
+        if macro_class:
+            if not (type(macro_class) == type(macro.Macro) and \
+                    issubclass(macro_class, macro.Macro)):
+                raise ValueError("macro_class must be a subclass of webtest.macro.Macro")
 
         # Initialize all class variables
         cls.test_sets = test_sets
@@ -482,7 +530,7 @@ class WebtestRunner:
         cls.think_time = think_time
         cls.scenario_think_time = scenario_think_time
         cls.verbosity = verbosity
-        cls.macro_class = macro_class
+        cls.macro_class = macro_class or macro.Macro
 
         # Add all webtest filenames in all test sets
         for test_set in cls.test_sets:
@@ -890,51 +938,5 @@ class WebtestRunner:
                 self.run_test_set(test_set)
 
         return True
-
-
-def get_test_runner(test_sets,
-                    before_set=None,
-                    after_set=None,
-                    sequence='sequential',
-                    think_time=500,
-                    scenario_think_time=500,
-                    verbosity='quiet',
-                    variables={},
-                    macro_class=macro.Macro):
-    """Return a `TestRunner` base class that runs ``.webtest`` files in the
-    given list of `TestSet`\s.
-
-        ``variables``
-            Default variables for all `TestRunner` instances. Each
-            `TestRunner` instance will get their own copy of these, but
-            passing them here lets you define defaults for commonly-used
-            variables like server name, username, or password.
-
-    See `WebtestRunner.set_class_attributes` for documentation on the other
-    parameters.
-    """
-    kwargs = {
-        'before_set': before_set,
-        'after_set': after_set,
-        'sequence': sequence,
-        'think_time': think_time,
-        'scenario_think_time': scenario_think_time,
-        'verbosity': verbosity,
-        'macro_class': macro_class,
-    }
-    WebtestRunner.set_class_attributes(test_sets, **kwargs)
-
-    # Define the actual TestRunner wrapper class. This allows us to delay
-    # instantiation of the class until the Grinder threads run, while still
-    # populate the instance with the given variables in the __init__ method.
-    class TestRunner (WebtestRunner):
-        def __init__(self):
-            """Create a TestRunner instance initialized with the given
-            variables.
-            """
-            WebtestRunner.__init__(self, **variables)
-
-    # Return the class (NOT an instance!)
-    return TestRunner
 
 
