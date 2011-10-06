@@ -22,50 +22,39 @@ You can also assign the return value of a macro to a variable, for later use::
     <FormPostParameter Name="INVOICE_DATE" Value="{TODAY = today(%y%m%d)}"/>
     <FormPostParameter Name="DUE_DATE" Value="{NEXT_WEEK= today_plus(7, %y%m%d)}"/>
 
-If you want to define your own custom macros, first create a derived class::
+If you want to define your own custom macros, create a derived class containing
+your custom methods::
 
     from webtest.macro import Macro
 
     class MyMacro (Macro):
-        def square(self, num):
-            return str(num * num)
+        # Zero-argument macro
+        def pi(self):
+            return '3.14159'
 
-        def cube(self, num):
-            return str(num * num * num)
+        # One-argument macro
+        def square(self, num):
+            return int(num) ** 2
+
+        # Two-argument macro
+        def multiply(self, x, y):
+            return int(x) * int(y)
 
 Then, tell your test runner to use your macro class::
 
     TestRunner = get_test_runner( ... , macro_class=MyMacro)
 
 Any ``.webtest`` files that are executed by this TestRunner will be able to call
-your custom macro methods::
+your custom macro methods, optionally storing their results in variables::
 
-    <FormPostParameter Name="NUM1" Value="{square(5)}" />
-    <FormPostParameter Name="NUM2" Value="{CUBE_VAR = cube(5)}" />
+    <FormPostParameter Name="NUM1" Value="{PI = pi()}" />
+    <FormPostParameter Name="NUM2" Value="{square(5)}" />
+    <FormPostParameter Name="NUM3" Value="{PRODUCT = multiply(3, 6)}" />
 
-Macro functions each accept a string argument, and return a string. If a macro
-needs to accept several arguments, they are packed into a string and separated
-with commas. You can unpack them yourself::
-
-    class MyMacro (Macro):
-        def multiply(self, x_and_y):
-            x, y = x_and_y.split(',')
-            return str(int(x) * int(y))
-
-Or use the provided ``unpack`` method::
-
-    class MyMacro (Macro):
-        def multiply(self, x_and_y):
-            x, y = self.unpack(x_and_y)
-            return str(int(x) * int(y))
-
-If a macro does not need to make use of its argument, you can just
-call the argument ``ignored`` to make it clear that the argument is not used::
-
-    class MyMacro (Macro):
-        def pi(self, ignored):
-            return '3.14159'
-
+All macro arguments are strings; if your arguments are intended to be numeric,
+you must convert them yourself. The return value will also be converted to
+a string; it's converted automatically when your macro is invoked, but you
+may want to convert it yourself to ensure you get exactly what you want.
 """
 
 import random
@@ -83,22 +72,26 @@ class Macro:
     def __init__(self):
         pass
 
-    def unpack(self, args):
-        """Unpack a string ``args`` by splitting on commas. This is a helper
-        method and should not be called as a macro.
-        """
-        return [arg.strip() for arg in args.split(',')]
-
     def invoke(self, macro_name, args):
         """Invoke ``macro_name``, passing ``args``, and return the result.
         This is a helper method and should not be called as a macro.
         """
+        # Don't allow calling invoke itself as a macro
+        if macro_name == 'invoke':
+            raise ValueError("Cannot call 'invoke' as a macro")
+
+        # Unpack the arguments
+        unpacked = [arg.strip() for arg in args.split(',')]
+        # [''] is equivalent to 0 arguments
+        if unpacked == ['']:
+            unpacked = []
+
         try:
             func = getattr(self, macro_name)
         except AttributeError:
             raise ValueError("Macro function '%s' is undefined")
         else:
-            return str(func(args))
+            return str(func(*unpacked))
 
     def random_digits(self, length):
         """Generate a random string of digits of the given length.
@@ -128,14 +121,13 @@ class Macro:
         """
         return datetime.date.today().strftime(format)
 
-    def today_plus(self, days_and_format):
+    def today_plus(self, days, format):
         """Return today plus some number of days, in the given format.
         For example, ``today_plus(9, %y-%m-%d)`` might return ``2011-10-15``.
         """
-        days, format = self.unpack(days_and_format)
         return (datetime.date.today() + datetime.timedelta(int(days))).strftime(format)
 
-    def timestamp(self, ignored):
+    def timestamp(self):
         """Return a timestamp (number of seconds since the epoch). For example,
         ``timestamp()`` might return ``1317917454``.
         """
