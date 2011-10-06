@@ -305,15 +305,14 @@ class TestSet:
     an implied dependency between them.
 
         ``webtest_filenames``
-            One or more ``.webtest`` XML filenames of tests to run together
-            in this set
+            One or more ``.webtest`` XML filenames of tests to run together in
+            this set
 
     Optional keyword arguments:
 
         ``weight``
-            A numeric indicator of how often to run this `TestSet`.
-            Use this with the ``sequence='weighted'`` argument to
-            `get_test_runner`.
+            A numeric indicator of how often to run this `TestSet`. Use this
+            with the ``sequence='weighted'`` argument to `get_test_runner`.
 
     """
     def __init__(self, *webtest_filenames, **kwargs):
@@ -331,9 +330,10 @@ def get_test_runner(test_sets,
                     think_time=500,
                     scenario_think_time=500,
                     verbosity='quiet',
-                    macro_class=macro.Macro):
+                    macro_class=None):
     """Return a `TestRunner` base class that runs ``.webtest`` files in the
-    given list of `TestSet`\s.
+    given list of `TestSet`\s. This is the primary wrapper for executing your
+    tests.
 
         ``variables``
             Default variables for all `TestRunner` instances. Each
@@ -395,7 +395,8 @@ def get_test_runner(test_sets,
         ``macro_class``
             The class (not the instance) where macro functions are defined. If
             ``None``, the `webtest.macro.Macro` class is used; pass a derived
-            class if you want to define your own macros.
+            class if you want to define your own macros. See `webtest.macro`
+            for how to define your own macros.
 
     """
     kwargs = {
