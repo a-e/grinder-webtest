@@ -1,3 +1,4 @@
 *.pyc
 .coverage
 htmlcov
+docs/_build/*
