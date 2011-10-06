@@ -10,6 +10,9 @@ You are reading the documentation for `Grinder Webtest`_, a custom module for
 the Grinder_ load test framework designed to execute Visual Studio ``.webtest``
 files.
 
+.. _Grinder Webtest: http://www.automation-excellence.com/software/grinder-webtest
+.. _Grinder: http://grinder.sourceforge.net/
+
 
 Motivation
 ----------
@@ -19,6 +22,8 @@ Fiddler_ was able to more correctly and accurately record the HTTP requests
 made by a web-enabled application. Since Fiddler is not designed for load
 testing, it became necessary to find an alternative method for running the
 scenarios it recorded.
+
+.. _Fiddler: http://www.fiddler2.com/fiddler2/
 
 Fiddler can export sessions in Visual Studio ``.webtest`` format, but Grinder
 has no native support for this. Hence, this module was developed, to allow
@@ -31,7 +36,8 @@ additional code.
 Features
 --------
 * Run an arbitrary number of tests, with logical grouping in test sets
-* Global and local variable parameters, with support for simple macros
+* Global and local variable parameters
+* Built-in and customizable macro functions
 * Capturing and verifying response output using regular expressions
 * Sequential, thread-based, random, or weighted test sequencing
 * Automatic numbering of individual tests for logging and reporting purposes
@@ -57,10 +63,9 @@ versions of Jython_, you can install like this::
 Alternatively, you can just build and run your tests directly in the source
 directory (it'll probably work better that way).
 
-If you want a copy of the latest development version, branch it from Launchpad_
-using Bazaar_::
+If you want a copy of the latest development version, clone it from Github_::
 
-    bzr branch lp:grinder-webtest
+    git clone git://github.com/a-e/grinder-webtest.git
 
 The only dependency aside from Grinder is Jython_. Due to some limitations in
 earlier versions of Grinder, this module was designed to work with Jython 2.2.1.
@@ -70,6 +75,8 @@ not been tested with newer versions of Jython; if you try a newer version,
 please let us know whether or not it works.
 
 .. _downloads page: https://launchpad.net/grinder-webtest/+download
+.. _Jython: http://www.jython.org/
+.. _Github: https://github.com/a-e/grinder-webtest
 
 
 Setup
@@ -125,6 +132,8 @@ has ``grinder.useConsole=true``, then run the console::
 Then start agents in separate terminals. Refer to the `Grinder docs`_ for more
 information about the console, agents, and properties.
 
+.. _Grinder docs: http://grinder.sourceforge.net/g3/getting-started.html
+
 
 Modules
 -------
@@ -136,12 +145,4 @@ Modules
     correlate
     parser
 
-
-.. _Grinder Webtest: http://www.automation-excellence.com/software/grinder-webtest
-.. _Grinder: http://grinder.sourceforge.net/
-.. _Jython: http://www.jython.org/
-.. _Fiddler: http://www.fiddler2.com/fiddler2/
-.. _Launchpad: https://code.launchpad.net/grinder-webtest
-.. _Bazaar: http://bazaar.canonical.com/
-.. _Grinder docs: http://grinder.sourceforge.net/g3/getting-started.html
 
