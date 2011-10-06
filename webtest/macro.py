@@ -1,6 +1,49 @@
 # macro.py
 
-"""Macro functions that can be invoked from a webtest.
+"""This module defines macro functions that can be invoked from a webtest.
+Macros provide a way of programmatically generating things like timestamps,
+random strings or numbers, or other strings that cannot be hard-coded.
+
+Macro functions are defined as methods within the `Macro` class. Any methods
+defined in this module are built-in, so you can invoke them from any evaluated
+expression in a ``.webtest`` file.
+
+All macro functions are invoked using a ``lower_case`` name followed by
+parentheses. If the macro accepts arguments, they are passed as a literal
+string, separated by commas. For example::
+
+    <FormPostParameter Name="INVOICE_DATE" Value="{today(%y%m%d)}"/>
+    <FormPostParameter Name="DUE_DATE" Value="{today_plus(7, %y%m%d)}"/>
+
+You can also assign the return value of a macro to a variable, for later use::
+
+    <FormPostParameter Name="INVOICE_DATE" Value="{TODAY = today(%y%m%d)}"/>
+    <FormPostParameter Name="DUE_DATE" Value="{NEXT_WEEK= today_plus(7, %y%m%d)}"/>
+
+If you want to define your own custom macros, first create a derived class::
+
+    from webtest.macro import Macro
+
+    class MyMacro (Macro):
+        def square(self, num):
+            return str(num * num)
+
+        def cube(self, num):
+            return str(num * num * num)
+
+Then, tell your test runner to use your macro class::
+
+    TestRunner = get_test_runner( ... , macro_class=MyMacro)
+
+Any ``.webtest`` files that are executed by this TestRunner will be able to call
+your custom macro methods::
+
+    <FormPostParameter Name="NUM1" Value="{square(5)}" />
+    <FormPostParameter Name="NUM2" Value="{CUBE_VAR = cube(5)}" />
+
+Macro functions each accept a string argument, and return a string. If a macro
+needs to accept several arguments, they are packed into a string and separated
+with commas.
 """
 
 import random
@@ -14,10 +57,6 @@ def _sample(choices, how_many):
 
 class Macro:
     """Functions that can be invoked from a webtest.
-
-    Macro functions each accept a string argument, and return a string.
-    If a macro needs to accept several arguments, they should be packed
-    into a string and separated with commas.
     """
     def __init__(self):
         pass

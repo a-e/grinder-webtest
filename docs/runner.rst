@@ -14,8 +14,6 @@ module.
 .. autoclass:: webtest.runner.TestSet
     :members:
 
-.. autofunction:: webtest.runner.macro
-
 .. autoclass:: webtest.runner.WebtestRunner
     :members: set_class_attributes, eval_expressions, eval_capture
 

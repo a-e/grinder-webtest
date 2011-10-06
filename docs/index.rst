@@ -132,6 +132,7 @@ Modules
     :maxdepth: 1
 
     runner
+    macro
     correlate
     parser
 

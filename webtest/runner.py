@@ -110,10 +110,11 @@ Variables can also be set to the result of a "macro"; this is useful if you
 need to refer to the current date (when the script runs), or for generating
 random alphanumeric values::
 
-    <FormPostParameter Name="INVOICE_DATE" Value="{TODAY = today(%y%m%d}"/>
+    <FormPostParameter Name="INVOICE_DATE" Value="{TODAY = today(%y%m%d)}"/>
     <FormPostParameter Name="INVOICE_ID" Value="{INVOICE_ID = random_digits(10)}"/>
 
-See the `macro` method below for details.
+See the `webtest.macro` module for details on using macros and defining custom
+macros.
 
 Finally, and perhaps most importantly, if you need to set a variable's value
 from one of the HTTP responses in your ``.webtest``, you can use a capture
