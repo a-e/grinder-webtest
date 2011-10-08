@@ -89,7 +89,7 @@ class Macro:
         try:
             func = getattr(self, macro_name)
         except AttributeError:
-            raise ValueError("Macro function '%s' is undefined")
+            raise ValueError("Macro function '%s' is undefined" % macro_name)
         else:
             return str(func(*unpacked))
 
