@@ -109,8 +109,8 @@ To simplify the task of starting the Grinder console and/or agent, a
 ``start.py`` script is provided. This script reads configuration settings from
 ``conf.py``.
 
-First, edit ``conf.py`` and define the appropriate pathnames for your
-environment. On Linux, it might look something like this::
+First, copy ``conf_example.py`` to ``conf.py``, and define the appropriate
+pathnames for your environment. On Linux, it might look something like this::
 
     paths = {
         'java':         '/usr/bin/java',
