@@ -11,9 +11,9 @@ paths = {
     'properties':   'grinder.properties',
 
     # Linux path examples
-    #'java':         '/usr/bin/java',
+    #'java':         '/usr/lib/jvm/java-6-openjdk/jre',
     #'jython':       '/usr/local/share/jython',
-    #'grinder':      '/usr/share/grinder',
-    #'properties':   './grinder.properties',
+    #'grinder':      '/usr/local/lib/grinder-3.5',
+    #'properties':   'grinder.properties',
 }
 
