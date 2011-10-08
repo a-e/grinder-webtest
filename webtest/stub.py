@@ -46,6 +46,10 @@ class Test:
         return Wrapper()
 
 class Response:
+    # Fake headers to mock
+    headers = {
+        'Content-Type': 'text/plain; charset=UTF-8',
+    }
     def __init__(self, body=''):
         self.body = body
 
@@ -54,6 +58,12 @@ class Response:
 
     def getStatusCode(self):
         return 200
+
+    def listHeaders(self):
+        return self.headers.keys()
+
+    def getHeader(self, name):
+        return self.headers[name]
 
 class StatisticsForTest:
     def __init__(self):

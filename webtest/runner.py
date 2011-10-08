@@ -811,6 +811,7 @@ class WebtestRunner:
 
         # Evaluate any expressions in the request URL
         url = self.eval_expressions(request.url)
+
         # Expand/assign any variables in the request parameters,
         # and convert to NVPairs
         parameters = []
@@ -818,8 +819,14 @@ class WebtestRunner:
             value = self.eval_expressions(value)
             pair = NVPair(name, value)
             parameters.append(pair)
-        # Convert headers to NVPairs
-        headers = [NVPair(name, value) for (name, value) in request.headers]
+
+        # Expand/assign any variables in the request headers,
+        # and convert to NVPairs
+        headers = []
+        for name, value in request.headers:
+            value = self.eval_expressions(value)
+            pair = NVPair(name, value)
+            headers.append(pair)
 
         # Send a POST or GET to the wrapped HTTPRequest
         if request.method == 'POST':
@@ -840,21 +847,8 @@ class WebtestRunner:
             raise BadRequestMethod(message)
 
         if WebtestRunner.verbosity == 'debug':
-            # Log the response
-            body = response.getText()
-            # Prettify xml
-            if body.startswith('<?xml'):
-                # This helps with making the XML more readable, but gets UTF-8
-                # errors from time to time. If they occur, ignore them and just
-                # skip prettification
-                import xml.dom.minidom
-                try:
-                    body = body.replace('\n', '').replace('\r', '').replace('\t', '')
-                    body = xml.dom.minidom.parseString(body).toprettyxml()
-                except:
-                    pass
             log("------ Response from %s: ------" % request)
-            log(body)
+            self.log_response(response)
 
         # If request has a 'Capture' attribute, parse it
         if request.capture:
@@ -863,11 +857,33 @@ class WebtestRunner:
         return response
 
 
+    def log_response(self, response):
+        """Output full response information to the log file.
+        """
+        log("HEADERS:")
+        for name in response.listHeaders():
+            value = response.getHeader(name)
+            log("  %s: %s" % (name, value))
+
+        log("BODY:")
+        body = response.getText()
+        # Prettify xml
+        if body.startswith('<?xml'):
+            # This helps with making the XML more readable, but gets UTF-8
+            # errors from time to time. If they occur, ignore them and just
+            # skip prettification
+            import xml.dom.minidom
+            try:
+                body = body.replace('\n', '').replace('\r', '').replace('\t', '')
+                body = xml.dom.minidom.parseString(body).toprettyxml()
+            except:
+                pass
+        log(body)
+
+
     def run_test_set(self, test_set):
         """Run all ``.webtest`` files in the given `TestSet`.
         """
-        grinder.statistics.forLastTest.success = True
-
         # TODO: Reduce the amount of stuff inside this try block
         try:
             for filename in test_set.filenames:

@@ -85,7 +85,6 @@ class TestWebtestRunner (unittest.TestCase):
         # Call the runner to execute tests
         result = runner_instance()
         self.assertEqual(result, True)
-        self.assertEqual(stub.grinder.statistics.forLastTest.success, True)
 
         # TODO: Test random, thread, weighted
 
