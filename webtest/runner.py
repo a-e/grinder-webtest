@@ -757,6 +757,7 @@ class WebtestRunner:
         # Import re here to avoid threading problems
         # See: http://osdir.com/ml/java.grinder.user/2003-07/msg00030.html
         import re
+
         # Match a {VAR_NAME = <regular expression>}
         re_capture = re.compile('^{([_A-Z0-9]+) ?= ?(.+)}$')
 
@@ -802,6 +803,18 @@ class WebtestRunner:
         return captured
 
 
+    def evaluated_nvpairs(self, pairs):
+        """Given some (name, value) pairs, construct an ``NVPair`` list, with
+        the ``value`` part of each pair being run through `eval_expressions`.
+        """
+        nvpairs = []
+        for name, value in pairs:
+            value = self.eval_expressions(value)
+            nvpair = NVPair(name, value)
+            nvpairs.append(nvpair)
+        return nvpairs
+
+
     def execute(self, test, wrapper, request):
         """Execute a Grinder `Test` instance, wrapped in ``wrapper``, that
         sends a `~webtest.parser.Request`.
@@ -812,21 +825,10 @@ class WebtestRunner:
         # Evaluate any expressions in the request URL
         url = self.eval_expressions(request.url)
 
-        # Expand/assign any variables in the request parameters,
-        # and convert to NVPairs
-        parameters = []
-        for name, value in request.parameters:
-            value = self.eval_expressions(value)
-            pair = NVPair(name, value)
-            parameters.append(pair)
-
-        # Expand/assign any variables in the request headers,
-        # and convert to NVPairs
-        headers = []
-        for name, value in request.headers:
-            value = self.eval_expressions(value)
-            pair = NVPair(name, value)
-            headers.append(pair)
+        # Evaluate expressions in parameters and headers, and
+        # convert them to NVPairs
+        parameters = self.evaluated_nvpairs(request.parameters)
+        headers = self.evaluated_nvpairs(request.headers)
 
         # Send a POST or GET to the wrapped HTTPRequest
         if request.method == 'POST':
