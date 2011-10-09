@@ -16,10 +16,10 @@ class TestSetTest (unittest.TestCase):
         """Test the `TestSet` class.
         """
         login_file = os.path.join(data_dir, 'login.webtest')
-        ts = runner.TestSet(login_file)
-        self.assertEqual(len(ts.filenames), 1)
-        self.assertEqual(ts.filenames, [login_file])
-        self.assertEqual(ts.weight, 1.0)
+        test_set = runner.TestSet(login_file)
+        self.assertEqual(len(test_set.filenames), 1)
+        self.assertEqual(test_set.filenames, [login_file])
+        self.assertEqual(test_set.weight, 1.0)
 
 
 class TestWebtestRunner (unittest.TestCase):
@@ -35,9 +35,18 @@ class TestWebtestRunner (unittest.TestCase):
             before_set=login_test,
             after_set=login_test,
             verbosity='debug',
-            sequence='weighted')
+            sequence='weighted',
+            think_time=123,
+            scenario_think_time=456,
+        )
         self.assertEqual(type(test_runner), type(runner.WebtestRunner))
         self.assertEqual(len(test_runner.test_sets), 1)
+        self.assertEqual(test_runner.before_set, login_test)
+        self.assertEqual(test_runner.after_set, login_test)
+        self.assertEqual(test_runner.verbosity, 'debug')
+        self.assertEqual(test_runner.sequence, 'weighted')
+        self.assertEqual(test_runner.think_time, 123)
+        self.assertEqual(test_runner.scenario_think_time, 456)
 
 
     def test_get_test_runner_exceptions(self):

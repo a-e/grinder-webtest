@@ -883,38 +883,41 @@ class WebtestRunner:
         log(body)
 
 
+    def _run_webtest_file(self, filename):
+        """Execute all requests in the given .webtest filename.
+        May raise a `CaptureFailed` or `BadRequestMethod` if errors occur.
+        """
+        # Execute all requests in this test set, in order
+        for test, wrapper, request in WebtestRunner.webtest_requests[filename]:
+            # Execute this request
+            try:
+                response = self.execute(test, wrapper, request)
+
+            # If problems occurred, report an error
+            except (CaptureFailed, BadRequestMethod):
+                grinder.statistics.forLastTest.success = False
+                raise
+
+            # If response was not valid, report an error
+            if response.getStatusCode() >= 400:
+                grinder.statistics.forLastTest.success = False
+
+            # Sleep between requests
+            grinder.sleep(WebtestRunner.think_time)
+
+
     def run_test_set(self, test_set):
         """Run all ``.webtest`` files in the given `TestSet`.
         """
-        # TODO: Reduce the amount of stuff inside this try block
-        try:
-            for filename in test_set.filenames:
-                if WebtestRunner.verbosity != 'error':
-                    log("==== Executing: %s ==========" % filename)
+        for filename in test_set.filenames:
+            if WebtestRunner.verbosity != 'error':
+                log("==== Executing: %s ==========" % filename)
 
-                # Execute all requests in this test set, in order
-                for test, wrapper, request in WebtestRunner.webtest_requests[filename]:
-                    # Execute this request
-                    response = self.execute(test, wrapper, request)
+            self._run_webtest_file(filename)
 
-                    # If response was not valid, report an error
-                    if response.getStatusCode() >= 400:
-                        grinder.statistics.forLastTest.success = False
+        # Sleep between scenarios
+        grinder.sleep(WebtestRunner.scenario_think_time)
 
-                    # Sleep between requests
-                    grinder.sleep(WebtestRunner.think_time)
-
-            # Sleep between webtest scenarios
-            grinder.sleep(WebtestRunner.scenario_think_time)
-
-        # If problems occurred, report an error
-        except CaptureFailed:
-            grinder.statistics.forLastTest.success = False
-            raise
-
-        except BadRequestMethod:
-            grinder.statistics.forLastTest.success = False
-            raise
 
 
     def __call__(self):
