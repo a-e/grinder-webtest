@@ -111,21 +111,22 @@ class Macro:
         """
         return ''.join(_sample('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', int(length)))
 
-    def today(self, format):
-        """Return today's date in the given format. For example, ``%m%d%y`` for
-        ``MMDDYY`` format. See the datetime_ module documentation for allowed
-        format strings. For example, ``today(%y-%m-%d)`` might return
-        ``2011-10-06``.
+    def now(self, format='%Y-%m-%d %H:%M:%S'):
+        """Return the current date/time in the given format. For example,
+        ``%m%d%y`` for ``MMDDYY`` format. See the datetime_ module
+        documentation for allowed format strings. For example,
+        ``today(%y-%m-%d)`` might return ``2011-10-06``.
 
         .. _datetime: http://docs.python.org/library/datetime.html
         """
-        return datetime.date.today().strftime(format)
+        return datetime.datetime.now().strftime(format)
+    today = now
 
-    def today_plus(self, days, format):
+    def today_plus(self, days, format='%Y-%m-%d'):
         """Return today plus some number of days, in the given format.
-        For example, ``today_plus(9, %y-%m-%d)`` might return ``2011-10-15``.
+        For example, ``today_plus(9, %Y-%m-%d)`` might return ``2011-10-15``.
         """
-        return (datetime.date.today() + datetime.timedelta(int(days))).strftime(format)
+        return (datetime.datetime.now() + datetime.timedelta(int(days))).strftime(format)
 
     def timestamp(self):
         """Return a timestamp (number of seconds since the epoch). For example,
