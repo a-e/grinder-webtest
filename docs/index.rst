@@ -58,14 +58,14 @@ You can obtain Grinder Webtest by downloading a official release from the
 `downloads page`_, then extracting it to a location on your disk. In later
 versions of Jython_, you can install like this::
 
-    jython setup.py install
+    $ jython setup.py install
 
 Alternatively, you can just build and run your tests directly in the source
 directory (it'll probably work better that way).
 
 If you want a copy of the latest development version, clone it from Github_::
 
-    git clone git://github.com/a-e/grinder-webtest.git
+    $ git clone git://github.com/a-e/grinder-webtest.git
 
 The only dependency aside from Grinder is Jython_. Due to some limitations in
 earlier versions of Grinder, this module was designed to work with Jython 2.2.1.
@@ -76,7 +76,6 @@ please let us know whether or not it works.
 
 .. _downloads page: https://launchpad.net/grinder-webtest/+download
 .. _Jython: http://www.jython.org/
-.. _Github: https://github.com/a-e/grinder-webtest
 
 
 Setup
@@ -122,17 +121,47 @@ pathnames for your environment. On Linux, it might look something like this::
 Save the changes to ``conf.py``. You can run the tests in a single agent
 process like so::
 
-    jython start.py agent
+    $ jython start.py agent
 
 Or, if you would like to use the console, ensure your ``grinder.properties``
 has ``grinder.useConsole=true``, then run the console::
 
-    jython start.py console
+    $ jython start.py console
 
 Then start agents in separate terminals. Refer to the `Grinder docs`_ for more
 information about the console, agents, and properties.
 
+Please report bugs and feature requests to the `issues page`_.
+
 .. _Grinder docs: http://grinder.sourceforge.net/g3/getting-started.html
+.. _issues page: https://github.com/a-e/grinder-webtest/issues
+
+
+Development
+-----------
+
+If you'd like to work on developing grinder-webtest, fork the project from
+Github_ and clone your fork. You may also want to set up a virtual environment
+for installing any Python dependencies (pythonbrew_ is nice), activate it, then
+do::
+
+    $ pip install -r requirements.txt
+
+Some unit tests are included in the ``tests`` directory, which you can run using
+pytest_ like this::
+
+    $ py.test
+
+This will also generate an HTML-formatted coverage report in ``htmlcov``. The
+tests should work using regular Python, so you don't need to muck about with
+Jython for this.
+
+If you develop any cool new features or fix any bugs, please submit a `pull
+request`_!
+
+.. _Github: https://github.com/a-e/grinder-webtest
+.. _pythonbrew: https://github.com/utahta/pythonbrew
+.. _pytest: http://pytest.org/
 
 
 Modules
